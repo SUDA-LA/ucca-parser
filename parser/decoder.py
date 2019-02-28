@@ -35,26 +35,21 @@ class Remote_Decoder(Decoder):
     def score(self, lstm_out, all_span):
         span_vectors = [get_span_encoding(lstm_out, i, j) for i, j in all_span]
         span_vectors = torch.stack(span_vectors)
-        edge_scores, label_scores = self.remote_scorer(span_vectors.unsqueeze(0))
-        return edge_scores.squeeze(0), label_scores.squeeze(0).permute(1, 2, 0)
+        label_scores = self.remote_scorer(span_vectors.unsqueeze(0))
+        return label_scores.squeeze(0).permute(1, 2, 0)
 
     def get_loss(self, lstm_out, all_span, remote):
-        loss_func = torch.nn.CrossEntropyLoss(reduction="sum")
-        edge_scores, label_scores = self.score(lstm_out, all_span)
+        loss_func = torch.nn.CrossEntropyLoss()
+        label_scores = self.score(lstm_out, all_span)
         head, dep, label = remote
-        edge_loss = loss_func(edge_scores[head], dep)
 
-        label_loss = loss_func(label_scores[head, dep], label)
-        return edge_loss + label_loss
+        label_loss = loss_func(label_scores[head.view(-1), dep.view(-1)], label.view(-1))
+        return label_loss
 
     def predict(self, lstm_out, all_span, remote_head):
-        edge_scores, label_scores = self.score(lstm_out, all_span)
-        result = []
-        for head in remote_head:
-            dep = edge_scores[head].argmax()
-            label = label_scores[head, dep].argmax()
-            result.append((dep, label))
-        return result
+        label_scores = self.score(lstm_out, all_span)
+        labels = label_scores[remote_head].argmax(dim=-1)
+        return labels
 
     def to_UCCA(self, passage, tree, lstm_out):
         passage = to_UCCA(passage, tree)
@@ -66,39 +61,30 @@ class Remote_Decoder(Decoder):
             terminals = node.get_terminals()
             return (terminals[0].position - 1, terminals[-1].position)
 
-        all_span, ids = [], []
-        new_id = {}
-        remote_head = []
-        assert "1" in passage._layers
-        for node in passage.layer("1").all:
-            if len(node._incoming) > 0 and "-remote" in node._incoming[0].tag:
-                assert len(node._incoming) == 1
-                i = node._incoming[0]
-                remote_head.append(i.child.ID)
-                i._tag = i._tag.strip("-remote")
-                all_span.append(get_span(node))
-                ids.append(node.ID)
-                new_id[node.ID] = len(new_id)
-            else:
-                if (
-                    node.ID not in new_id
-                    and len(node.get_terminals()) > 0
-                    and not all(isinstance(n, Terminal) for n in node.children)
-                ):
-                    all_span.append(get_span(node))
-                    ids.append(node.ID)
-                    new_id[node.ID] = len(new_id)
+        heads = []
+        nodes = passage.layer('1').all
+        ndict = {node: i for i, node in enumerate(nodes)}
+        spans = [get_span(i) for i in nodes]
+        for node in nodes:
+            for edge in node._incoming:
+                if "-remote" in edge.tag:
+                    heads.append(node)
+                    if hasattr(edge, 'categories'):
+                        edge.categories[0]._tag = edge.categories[0]._tag.strip("-remote")
+                    else:
+                        edge._tag = edge._tag.strip("-remote")
+        heads = [ndict[node] for node in heads]
 
-        remote_head = [new_id[r] for r in remote_head]
-        if len(remote_head) == 0:
+        if len(heads) == 0:
             return
         else:
-            remote_edge = self.predict(lstm_out, all_span, remote_head)
-        for head, (dep, label) in zip(remote_head, remote_edge):
-            head = passage._nodes[ids[head]]
-            dep = passage._nodes[ids[dep]]
-            label = self.vocab.id2edge_label(label)
-            passage.layer("1").add_remote(dep, label, head)
+            label_scores = self.predict(lstm_out, spans, heads)
+            
+        for head, label_score in zip(heads, label_scores):
+            for i, score in enumerate(label_score):
+                label = self.vocab.id2edge_label(score)
+                if label is not self.vocab.NULL:
+                    passage.layer("1").add_remote(nodes[i], label, nodes[head])
 
 
 class Chart(Decoder):

@@ -8,6 +8,7 @@ import torch.utils.data as Data
 
 from utils import Corpus, Trainer, Vocab, collate_fn, collate_fn_cuda
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training")
     parser.add_argument("--train_path", required=True, help="train data dir")
@@ -38,7 +39,6 @@ if __name__ == "__main__":
     parser.add_argument("--label_hidden", type=int, default=200)
     parser.add_argument("--split_hidden", type=int, default=200)
     parser.add_argument("--ffn_drop", type=float, default=0.2)
-    parser.add_argument("--mlp_edge_dim", type=int, default=100)
     parser.add_argument("--mlp_label_dim", type=int, default=100)
     args = parser.parse_args()
     

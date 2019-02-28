@@ -37,29 +37,25 @@ class Instance(object):
             terminals = node.get_terminals()
             return (terminals[0].position - 1, terminals[-1].position)
 
-        all_span = []
-        new_id = {}
-        remote_edge = []
-        if "1" in self.passage._layers:
-            for node in self.passage.layer("1").all:
-                for i in node._incoming:
-                    if i.attrib.get("remote") == True:
-                        remote_edge.append((i.child.ID, i.parent.ID, i.tag))
-                        all_span.append(get_span(i.parent))
-                        new_id[i.parent.ID] = len(new_id)
+        edges, spans = [], []
+        nodes = [node for node in self.passage.layer('1').all
+                if isinstance(node, FoundationalNode)
+                and not node.attrib.get('implicit')]
+        ndict = {node: i for i, node in enumerate(nodes)}
+        spans = [get_span(i) for i in nodes]
 
-                        if i.child.ID not in new_id:
-                            all_span.append(get_span(i.child))
-                            new_id[i.child.ID] = len(new_id)
+        remote_nodes = []
+        for node in nodes:
+            for i in node.incoming:
+                if i.attrib.get('remote'):
+                    remote_nodes.append(node)
+                    break
+        heads = [[ndict[n]] * len(nodes) for n in remote_nodes]
+        deps = [list(range(len(nodes))) for _ in remote_nodes]
+        labels = [['<NULL>'] * len(nodes) for _ in remote_nodes]
+        for id, node in enumerate(remote_nodes):
+            for i in node.incoming:
+                if i.attrib.get('remote'):
+                    labels[id][ndict[i.parent]] = i.tag
 
-                if isinstance(node, FoundationalNode) and not node.attrib.get(
-                    "implicit"
-                ):
-                    if node.ID not in new_id and not all(
-                        isinstance(n, Terminal) for n in node.children
-                    ):
-                        all_span.append(get_span(node))
-                        new_id[node.ID] = len(new_id)
-
-        remote_edge = [(new_id[x], new_id[y], z) for x, y, z in remote_edge]
-        return all_span, remote_edge
+        return spans, (heads, deps, labels)

@@ -1,4 +1,3 @@
-from ucca.convert import to_text, xml2passage
 from ucca.core import edge_id_orderkey
 from ucca.layer0 import Terminal
 from ucca.layer1 import FoundationalNode, Layer1, NodeTags, PunctNode
@@ -7,46 +6,37 @@ from .trees import InternalTreebankNode, LeafTreebankNode
 
 
 def remove_implicit(passage):
-    for id, node in passage.nodes.items():
-        if node.attrib.get("implicit") is True:
-            incoming = node._incoming
-            for p in node.parents:
-                for e in incoming:
-                    p._outgoing.remove(e)
-            passage.layer("1")._all.remove(node)
-            for e in incoming:
-                passage.layer("1")._remove_edge(e)
+    for _, node in passage.nodes.items():
+        if node.attrib.get("implicit"):
+            node.destroy()
 
 
 def remove_linkage(passage):
-    for id, node in passage.nodes.items():
+    for _, node in passage.nodes.items():
         if node.tag == "LKG":
-            outgoing = node._outgoing
-            for p in node.children:
-                for e in outgoing:
-                    if e in p._incoming:
-                        p._incoming.remove(e)
-            passage.layer("1")._all.remove(node)
-            for e in outgoing:
-                passage.layer("1")._remove_edge(e)
+            node.destroy()
 
 
 def remove_remote(passage):
     for id, node in passage.nodes.items():
         to_remove = []
-        for e in node._incoming:
-            if e.attrib.get("remote") == True:
+        for e in node.incoming:
+            if e.attrib.get("remote"):
                 to_remove.append(e)
         if len(to_remove) > 0:
             for e in to_remove:
                 node._incoming.remove(e)
                 e._parent._outgoing.remove(e)
-            node._incoming[0]._tag += "".join(["-remote"])
+            modify_edge = node.incoming[0]
+            if hasattr(modify_edge, "categories"):
+                modify_edge.categories[0]._tag += "-remote"
+            else:
+                modify_edge._tag += "-remote"
 
 
 def remove_discontinue(passage):
     def terminal2id(terminals):
-        return [t.position for t in terminals]
+        return [int(t.ID.split(".")[1]) for t in terminals]
 
     def get_discontinue_terminal(passage, terminal):
         id = terminal2id(terminal)
@@ -68,35 +58,55 @@ def remove_discontinue(passage):
                 dis_nodes.append(node)
                 dis_terminals.append(node.get_terminals())
         return dis_nodes, dis_terminals
-
-    def classify(dis_nodes, dis_terminals):
-        with_overlap = []
-        span = [
-            set(range(int(t[0].ID.split(".")[1]), int(t[-1].ID.split(".")[1]) + 1))
-            for t in dis_terminals
-        ]
-        for i in range(len(span) - 1):
-            for j in range(i + 1, len(span)):
-                re = span[i] & span[j]
-                if len(re) > 0:
-                    if dis_nodes[i] not in with_overlap:
-                        with_overlap.append(dis_nodes[i])
-                    if dis_nodes[j] not in with_overlap:
-                        with_overlap.append(dis_nodes[j])
-        without_overlap = [x for x in dis_nodes if x not in with_overlap]
-        return without_overlap, with_overlap
-
-    def move_down(passage, dis_node):
-        def down(terminal_node, dis_node, span):
-            parent = terminal_node
-            while not set(parent.parents[0].get_terminals()) >= set(span):
+    
+    def is_ancestor(ancestor, descendant):
+        step = 0
+        parent = descendant
+        while True:
+            if parent == ancestor:
+                return step
+            else:
+                if len(parent.parents) == 0:
+                    break
                 parent = parent.parents[0]
-            modify_edge = parent._incoming[0]
+                step += 1
+        return -1
 
+    def move(passage, dis_node): 
+        def _down(terminal_node, dis_node, span):
+            parent = terminal_node
+            ext_label = None
+            while True:
+                assert len(parent.parents) == 1
+                if parent.parents[0].discontiguous:
+                    # ext_label = '-discontiguous'
+                    ext_label = ''
+                    break
+
+                step = is_ancestor(parent.parents[0], dis_node)
+                if step > -1:
+                    ext_label = "-ancestor"
+                    break
+                parent = parent.parents[0]
+                
+            assert ext_label is not None
+            modify_edge = parent.incoming[0]
             parent.parents[0]._outgoing.remove(modify_edge)
-            parent._incoming[0]._parent = dis_node
-            if "down" not in parent._incoming[0]._tag:
-                parent._incoming[0]._tag += "-down"
+            parent.incoming[0]._parent = dis_node
+            if ext_label == "-ancestor":
+                if ext_label not in modify_edge.tag:
+                    if step == 1:
+                        if hasattr(modify_edge, "categories"):
+                            modify_edge.categories[0]._tag += ext_label
+                        else:
+                            modify_edge._tag += ext_label
+                else:
+                    if hasattr(modify_edge, "categories"):
+                        modify_edge.categories[0]._tag += modify_edge.categories[0]._tag[:1]
+                    else:
+                        modify_edge._tag = modify_edge._tag[:1]
+            # if ext_label not in parent._incoming[0]._tag:
+            #     parent._incoming[0].categories[0]._tag += ext_label
             dis_node._outgoing.append(modify_edge)
             dis_node._outgoing.sort(key=edge_id_orderkey)
 
@@ -106,58 +116,14 @@ def remove_discontinue(passage):
             current_terminals = dis_node.get_terminals()
             if t not in current_terminals:
                 assert len(t.parents) == 1
-                down(t, dis_node, terminal)
-
-    def move_left(passage, left_dis_node, right_dis_node):
-        assert left_dis_node.parents[0] == right_dis_node.parents[0]
-        left_terminals, right_terminals = (
-            left_dis_node.get_terminals(),
-            right_dis_node.get_terminals(),
-        )
-        for n in get_discontinue_terminal(passage, left_terminals):
-            if n not in left_dis_node.get_terminals():
-                if n in right_terminals:
-                    parent = n
-                    while parent.parents[0] != right_dis_node:
-                        parent = parent.parents[0]
-                    modify_edge = parent._incoming[0]
-                    moved_node = modify_edge.child
-
-                    parent.parents[0]._outgoing.remove(modify_edge)
-                    parent._incoming[0]._parent = left_dis_node
-                    # if "left" not in parent._incoming[0]._tag:
-                    #     parent._incoming[0]._tag += "-left"
-                    left_dis_node._outgoing.append(modify_edge)
-                    left_dis_node._outgoing.sort(key=edge_id_orderkey)
+                _down(t, dis_node, terminal)
 
     while True:
         dis_nodes, dis_terminals = get_dis_nodes(passage)
-        if len(dis_terminals) == 0:
+        if len(dis_nodes) == 0:
             return
-        without_overlap, with_overlap = classify(dis_nodes, dis_terminals)
-        for n in without_overlap:
-            move_down(passage, n)
-        count = 0
-        for i in range(len(with_overlap) - 1):
-            x_t = with_overlap[i].get_terminals()
-            x_span = range(x_t[0].position, x_t[-1].position + 1)
-            for j in range(i + 1, len(with_overlap)):
-                y_t = with_overlap[j].get_terminals()
-                y_span = range(y_t[0].position, y_t[-1].position + 1)
-                if set(x_span) >= set(y_span):
-                    move_down(passage, with_overlap[j])
-                    count += 1
-                elif set(x_span) <= set(y_span):
-                    move_down(passage, with_overlap[i])
-                    count += 1
-        if count == 0 and len(without_overlap) == 0:
-            break
-
-    without_overlap, with_overlap = classify(dis_nodes, dis_terminals)
-    assert len(without_overlap) == 0
-    without_overlap.sort(key=lambda x: x.position)
-    move_left(passage, with_overlap[0], with_overlap[1])
-    move_down(passage, with_overlap[0])
+        for n in dis_nodes:
+            move(passage, n)
 
 
 def UCCA2tree(passage):
@@ -171,41 +137,18 @@ def UCCA2tree(passage):
 
     root = [node for node in passage.layer("1")._all if len(node._incoming) == 0]
     assert len(root) == 1
-    try:
-        tree = to_tree(root[0])
-    except Exception as e:
-        print(passage.ID)
-    assert len(tree) >= 2
-    return to_treebank(tree)
+    return to_treebank('ROOT', root[0])
 
 
-def to_treebank(tree):
-    if len(tree) == 1:
-        pos = tree[0].split()[0]
-        word = tree[0].split()[1]
-        return LeafTreebankNode(pos, word)
-
+def to_treebank(label, node):
+    if len(node.outgoing) == 0:
+        return LeafTreebankNode(node.extra["pos"], node.text)
+    
     children = []
-    for child in tree[1:]:
-        children.append(to_treebank(child))
-    return InternalTreebankNode(tree[0], children)
-
-
-def to_tree(node):
-    if len(node.children) == 0:
-        return [node.extra["pos"] + " " + node.text]
-    result = []
-
-    if len(node._incoming) == 0:
-        if node.tag == "LKG":
-            result.append("ROOT-LKG")
-        else:
-            result.append("ROOT")
-    else:
-        result.append(node._incoming[0].tag)
     for child in sorted(node.children, key=lambda x: x.get_terminals()[0].position):
-        result.append(to_tree(child))
-    return result
+        edge_label = child.incoming[0].tag
+        children.append(to_treebank(edge_label, child))
+    return InternalTreebankNode(label, children)
 
 
 def tree2passage(passage, tree):
@@ -228,22 +171,7 @@ def tree2passage(passage, tree):
             is_punc = sum(isinstance(c, Terminal) and c.punct for c in children)
             if is_punc == len(children):
                 parent._tag = "PNCT"
-                # true_ID = parent.ID
-                # punc_node = PunctNode(
-                #     root=passage,
-                #     tag=NodeTags.Punctuation,
-                #     ID=passage.layer("1").next_id(),
-                # )
-                # parent.parents[0].add(parent._incoming[0].tag, punc_node)
-                # for c in children:
-                #     punc_node.add("Terminal", c)
 
-                # for i in parent._incoming:
-                #     parent.parents[0]._outgoing.remove(i)
-                # for i in parent._outgoing:
-                #     i.child._incoming.remove(i)
-                # passage.layer("1")._all.remove(parent)
-                # punc_node._ID = true_ID
 
     passage = passage.copy(['0'])
     if "format" not in passage.extra:
@@ -286,14 +214,14 @@ def restore_discontinuity(passage):
        
 
     for node in passage.layer("1")._all:
-        for i in node._incoming:
-            if "down" in i.tag:
-                if len(i.parent._outgoing) > 1:
-                    restore_down(node, i)
-                i._tag = i._tag.strip("-down")
-            elif "left" in i.tag:
-                restore_left(node, i)
-                i._tag = i._tag.strip("-left")
+        for i in node.incoming:
+            if '-ancestor' in i.tag:
+                if len(i.parent.outgoing) > 1:
+                        restore_down(node, i)
+                if hasattr(i, "categories"):
+                    i.categories[0]._tag = i.categories[0]._tag.strip("-ancestor")
+                else:
+                    i._tag = i._tag.strip("-ancestor")
 
 
 def to_UCCA(passage, tree):

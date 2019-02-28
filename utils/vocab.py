@@ -16,6 +16,7 @@ class Vocab(object):
         self.START = "<START>"
         self.STOP = "<STOP>"
         self.PAD = "<PAD>"
+        self.NULL = "<NULL>"
 
         self._word = [self.PAD] + word + [self.START, self.STOP, self.UNK]
         self._pos = [self.PAD] + pos + [self.START, self.STOP]
@@ -23,7 +24,7 @@ class Vocab(object):
         self._entity = [self.PAD] + entity + [self.START, self.STOP]
         self._ent_iob = [self.PAD] + ent_iob + [self.START, self.STOP]
 
-        self._edge_label = edge_label
+        self._edge_label = [self.NULL] + edge_label
         self._parse_label = [()] + parse_label
 
         self._word2id = {w: i for i, w in enumerate(self._word)}

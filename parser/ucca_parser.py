@@ -46,7 +46,7 @@ class UCCA_Parser(torch.nn.Module):
             self.span_decoder = Top_down(vocab, self.span_scorer)
 
         self.remote_scorer = Remote_Scorer(
-            args.lstm_dim, args.mlp_edge_dim, args.mlp_label_dim, vocab.num_edge_label
+            args.lstm_dim, args.mlp_label_dim, vocab.num_edge_label
         )
         self.remote_decoder = Remote_Decoder(vocab, self.remote_scorer)
 
@@ -82,7 +82,6 @@ class UCCA_Parser(torch.nn.Module):
         if self.training:
             span_losses = 0.0
             remote_losses = 0.0
-            num_remote = 0
             for lstm_out, tree, nodes, remote in zip(
                 lstm_outs, trees, all_nodes, all_remote
             ):
@@ -91,13 +90,9 @@ class UCCA_Parser(torch.nn.Module):
                 if len(remote) == 0:
                     remote_loss = 0.0
                 else:
-                    num_remote += len(remote[0])
                     remote_loss = self.remote_decoder.get_loss(lstm_out, nodes, remote)
                 remote_losses += remote_loss
-            if num_remote == 0:
-                return span_losses / batch_size
-            else:
-                return span_losses / batch_size + remote_loss / num_remote
+            return span_losses / batch_size + remote_loss
         else:
             predict_passages = []
             predict_trees = []

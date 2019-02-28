@@ -49,17 +49,14 @@ class Corpus(object):
             # _sentence = list(zip(instance.words, instance.pos))
             _masks = torch.ones(instance.size + 2, dtype=torch.uint8)
 
-            nodes, remotes = instance.gerenate_remote()
-            if len(remotes) == 0:
+            nodes, (heads, deps, labels) = instance.gerenate_remote()
+            if len(heads) == 0:
                 _remotes = ()
             else:
-                remotes = zip(*remotes)
-                head, dep, label = remotes
-                _remotes = (
-                    torch.tensor(head),
-                    torch.tensor(dep),
-                    torch.tensor(vocab.edge_label2id(label)),
-                )
+                heads, deps = torch.tensor(heads), torch.tensor(deps)
+                labels = [[vocab.edge_label2id(l) for l in label] for label in labels]
+                labels = torch.tensor(labels)
+                _remotes = (heads, deps, labels)
 
             word_idxs.append(torch.tensor(_word_idxs))
             ext_word_idxs.append(torch.tensor(_ext_word_idxs))
