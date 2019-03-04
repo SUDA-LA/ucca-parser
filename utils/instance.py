@@ -37,6 +37,8 @@ class Instance(object):
             terminals = node.get_terminals()
             return (terminals[0].position - 1, terminals[-1].position)
 
+        if '1' not in self.passage._layers:
+            return [], ([], [], [])
         edges, spans = [], []
         nodes = [node for node in self.passage.layer('1').all
                 if isinstance(node, FoundationalNode)
