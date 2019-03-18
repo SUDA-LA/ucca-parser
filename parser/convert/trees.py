@@ -1,5 +1,5 @@
 import collections.abc
-
+import torch
 
 class TreebankNode(object):
     pass
@@ -178,3 +178,17 @@ def load_trees(path, strip_top=True):
                 trees[i] = tree.children[0]
 
     return trees
+
+
+# def get_position1(sen_len, left, right):
+#     left = torch.tensor(left, dtype=torch.long)
+#     right = torch.tensor(right, dtype=torch.long)
+#     length = right-left
+#     position = (length-1) * sen_len - (length-2)*(length-1)/2 +left
+#     return position
+
+def get_position(seq_len, left, right):
+    left = torch.tensor(left, dtype=torch.long)
+    right = torch.tensor(right, dtype=torch.long)
+    pos = seq_len*left - left*(left+1)/2 + right - 1
+    return pos

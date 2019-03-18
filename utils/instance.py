@@ -1,5 +1,5 @@
 import copy
-from parser import UCCA2tree
+from parser.convert import UCCA2tree
 
 from ucca.layer1 import FoundationalNode
 from ucca.layer0 import Terminal
@@ -10,16 +10,14 @@ class Instance(object):
         self.passage = passage
 
         terminals = [
-            (node.text, node.extra["pos"], node.extra["dep"], node.extra["ent_type"], node.extra["ent_iob"])
+            (node.text, node.extra["pos"],)
             for node in sorted(passage.layer("0").all, key=lambda x: x.position)
         ]
-        words, pos, dep, entity, ent_iob = zip(*terminals)
+        words, pos = zip(*terminals)
         self.words = list(words)
         self.pos = list(pos)
-        self.dep = list(dep)
-        self.entity = list(entity)
-        self.ent_iob = list(ent_iob)
         self.tree = self.generate_tree()
+        self.remote = self.gerenate_remote()
 
     @property
     def size(self):

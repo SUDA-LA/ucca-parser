@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--gpu", type=int, default=-1, help="gpu id")
     parser.add_argument("--seed", type=int, default=1, help="random seed")
-    parser.add_argument("--thread", type=int, default=4, help="thread num")
+    parser.add_argument("--thread", type=int, default=1, help="thread num")
     parser.add_argument("--batch_size", type=int, default=10, help="batch size")
     parser.add_argument("--epoch", type=int, default=100, help="max epoch")
     parser.add_argument("--patience", type=int, default=10)
@@ -27,11 +27,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--type", choices=["chart", "topdown"], default="topdown")
     parser.add_argument("--word_dim", type=int, default=300)
-    parser.add_argument("--pos_dim", type=int, default=50)
-    parser.add_argument("--dep_dim", type=int, default=50)
-    parser.add_argument("--entity_dim", type=int, default=25)
-    parser.add_argument("--ent_iob_dim", type=int, default=25)
+    parser.add_argument("--char_dim", type=int, default=50)
 
+    parser.add_argument("--charlstm_dim", type=int, default=50)
     parser.add_argument("--lstm_layer", type=int, default=2)
     parser.add_argument("--lstm_dim", type=int, default=200)
     parser.add_argument("--lstm_drop", type=float, default=0.4)
@@ -75,6 +73,8 @@ if __name__ == "__main__":
 
     # init parser
     ucca_parser = UCCA_Parser(vocab, args)
+    if use_cuda:
+        ucca_parser = ucca_parser.cuda()
 
     # prepare data
     train_loader = Data.DataLoader(

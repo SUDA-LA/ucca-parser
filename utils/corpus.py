@@ -27,7 +27,7 @@ class Corpus(object):
     @staticmethod
     def read_passages(path):
         passages = []
-        for file in os.listdir(path):
+        for file in sorted(os.listdir(path)):
             file_path = os.path.join(path, file)
             if os.path.isdir(file_path):
                 print(file_path)
@@ -35,19 +35,11 @@ class Corpus(object):
         return passages
 
     def generate_inputs(self, vocab, is_training=False):
-        word_idxs, ext_word_idxs, pos_idxs, dep_idxs, entity_idxs, ent_iob_idxs, masks = [], [], [], [], [], [], []
-        trees, all_nodes, all_remote, passages = [], [], [], []
+        word_idxs, ext_word_idxs, char_idxs = [], [], []
+        trees, all_nodes, all_remote = [], [], []
         for instance in self.instances:
-            _word_idxs, _ext_word_idxs = vocab.word2id(
-                [vocab.START] + instance.words + [vocab.STOP]
-            )
-            _pos_idxs = vocab.pos2id([vocab.START] + instance.pos + [vocab.STOP])
-            _dep_idxs = vocab.dep2id([vocab.START] + instance.dep + [vocab.STOP])
-            _entity_idxs = vocab.entity2id([vocab.START] + instance.entity + [vocab.STOP])
-            _iob_idxs = vocab.ent_iob2id([vocab.START] + instance.ent_iob + [vocab.STOP])
-
-            # _sentence = list(zip(instance.words, instance.pos))
-            _masks = torch.ones(instance.size + 2, dtype=torch.uint8)
+            _word_idxs, _ext_word_idxs = vocab.word2id([vocab.START] + instance.words + [vocab.STOP])
+            _char_idxs = vocab.char2id([vocab.START] + instance.words + [vocab.STOP])
 
             nodes, (heads, deps, labels) = instance.gerenate_remote()
             if len(heads) == 0:
@@ -60,14 +52,8 @@ class Corpus(object):
 
             word_idxs.append(torch.tensor(_word_idxs))
             ext_word_idxs.append(torch.tensor(_ext_word_idxs))
-            ent_iob_idxs.append(torch.tensor(_iob_idxs))
-            pos_idxs.append(torch.tensor(_pos_idxs))
-            dep_idxs.append(torch.tensor(_dep_idxs))
-            entity_idxs.append(torch.tensor(_entity_idxs))
+            char_idxs.append(torch.tensor(_char_idxs))
 
-            masks.append(_masks)
-            # sentences.append(_sentence)
-            passages.append(instance.passage)
             if is_training:
                 trees.append(instance.tree)
                 all_nodes.append(nodes)
@@ -80,12 +66,8 @@ class Corpus(object):
         return TensorDataSet(
             word_idxs,
             ext_word_idxs,
-            pos_idxs,
-            dep_idxs,
-            entity_idxs,
-            ent_iob_idxs,
-            masks,
-            passages,
+            char_idxs,
+            self.passages,
             trees,
             all_nodes,
             all_remote,

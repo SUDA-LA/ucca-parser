@@ -17,21 +17,15 @@ def check_dev(parser, dev):
     dev_gold = []
     dev_predicted = []
     for batch in dev:
-        word_idxs, ext_word_idxs, pos_idxs, dep_idxs, entity_idxs, ent_iob_idxs, masks, passages, trees, all_nodes, all_remote = (
+        word_idxs, ext_word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         dev_gold.extend(passages)
-        pred_passages, pred_trees = parser.parse(
-            (
+        pred_passages = parser.parse(
                 word_idxs,
                 ext_word_idxs,
-                pos_idxs,
-                dep_idxs,
-                entity_idxs,
-                ent_iob_idxs,
-                masks,
+                char_idxs,
                 passages,
-            )
         )
         dev_predicted.extend(pred_passages)
     results = []
@@ -83,7 +77,7 @@ class Trainer(object):
 
             for idx, batch in enumerate(train):
                 self.optimizer.zero_grad()
-                batch_loss = self.parser.parse(batch)
+                batch_loss = self.parser.parse(*batch)
                 batch_loss.backward()
                 nn.utils.clip_grad_norm_(self.parser.parameters(), 5.0)
                 self.optimizer.step()

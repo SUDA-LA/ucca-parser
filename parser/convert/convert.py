@@ -227,4 +227,5 @@ def restore_discontinuity(passage):
 def to_UCCA(passage, tree):
     passage = tree2passage(passage, tree)
     restore_discontinuity(passage)
+
     return passage

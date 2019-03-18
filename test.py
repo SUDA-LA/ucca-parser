@@ -1,5 +1,6 @@
 import argparse
 import os
+import datetime
 from parser import UCCA_Parser
 
 import torch
@@ -15,12 +16,10 @@ def write_test(parser, test, path):
 
     test_predicted = []
     for batch in test:
-        word_idxs, ext_word_idxs, pos_idxs, dep_idxs, entity_idxs, ent_iob_idxs, masks, passages, trees, all_nodes, all_remote = (
+        word_idxs, ext_word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
-        pred_passages, _ = parser.parse(
-            (word_idxs, ext_word_idxs, pos_idxs, dep_idxs, entity_idxs, ent_iob_idxs, masks, passages)
-        ) # passages without layer1. if has, it will be removed and add a new layer1
+        pred_passages = parser.parse(word_idxs, ext_word_idxs, char_idxs, passages)
         test_predicted.extend(pred_passages)
 
     if not os.path.exists(path):
@@ -37,22 +36,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing")
     parser.add_argument("--test_path", required=True, help="test data dir")
     parser.add_argument("--model_path", required=True, help="path to save the model")
-    parser.add_argument("--pred_path", required=True, help="dic to save the dev predict passages")
-    
+    parser.add_argument(
+        "--pred_path", required=True, help="dic to save the dev predict passages"
+    )
+
     parser.add_argument("--gpu", type=int, default=-1, help="gpu id")
     parser.add_argument("--thread", type=int, default=4, help="thread num")
     parser.add_argument("--batch_size", type=int, default=10, help="batch size")
     args = parser.parse_args()
 
     # choose GPU and init seed
-    assert args.gpu in range(-1, 8)
     if args.gpu >= 0:
         use_cuda = True
         torch.cuda.set_device(args.gpu)
         torch.set_num_threads(args.thread)
         print("using GPU device : %d" % args.gpu)
-        print("GPU seed = %d" % torch.cuda.initial_seed())
-        print("CPU seed = %d" % torch.initial_seed())
     else:
         use_cuda = False
         torch.set_num_threads(args.thread)
@@ -62,8 +60,9 @@ if __name__ == "__main__":
     test = Corpus(args.test_path)
     print(test)
 
+    device = "cuda:" + str(args.gpu) if use_cuda else "cpu"
     # reload parser
-    ucca_parser = torch.load(args.model_path)
+    ucca_parser = torch.load(args.model_path, map_location=device)
 
     test_loader = Data.DataLoader(
         dataset=test.generate_inputs(ucca_parser.vocab, False),
@@ -73,4 +72,7 @@ if __name__ == "__main__":
     )
 
     print("predicting test files...")
+    start_time = datetime.datetime.now()
     write_test(ucca_parser, test_loader, args.pred_path)
+    end_time = datetime.datetime.now()
+    print("parsing time is " + str(end_time - start_time) + "\n")
