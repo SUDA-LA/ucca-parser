@@ -10,10 +10,10 @@ from parser.convert import get_position
 
 
 class Chart_Span_Parser(nn.Module):
-    def __init__(self, vocab, lstm_dim, label_hidden_dim, n_label, drop):
+    def __init__(self, vocab, lstm_dim, label_hidden_dim, drop=0, norm=False):
         super(Chart_Span_Parser, self).__init__()
         self.vocab = vocab
-        self.label_ffn = Feedforward(lstm_dim * 2, label_hidden_dim, n_label, drop)
+        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
 
     def forward(self, span):
         label_score = self.label_ffn(span)
@@ -49,9 +49,7 @@ class Chart_Span_Parser(nn.Module):
         best_split_matrix = label_scores.new_full(
             (sen_len, sen_len), -1, dtype=torch.long
         )
-        accum_score_matrix = label_scores.new_zeros(
-            (sen_len, sen_len), dtype=torch.long
-        )
+        accum_score_matrix = label_scores.new_zeros((sen_len, sen_len))
 
         for length in range(1, sen_len + 1):
             for left in range(0, sen_len + 1 - length):
@@ -70,7 +68,9 @@ class Chart_Span_Parser(nn.Module):
                     continue
                 span_scores = (
                     accum_score_matrix[range(0, length - 1), left]
-                    + accum_score_matrix[range(length - 2, -1, -1), range(left + 1, right)]
+                    + accum_score_matrix[
+                        range(length - 2, -1, -1), range(left + 1, right)
+                    ]
                 )
                 accum_score, best_split = torch.max(span_scores, dim=0)
                 best_split_matrix[length - 1][left] = best_split + left + 1
@@ -93,7 +93,7 @@ class Chart_Span_Parser(nn.Module):
             gold_label = self.get_gold_labels(trees[i], length)
             gold_label = torch.tensor(gold_label, device=spans[i].device)
             batch_loss.append(loss_func(label_score, gold_label))
-        return sum(batch_loss) / len(batch_loss)
+        return batch_loss
 
     def predict(self, spans, sen_lens):
         pred_trees = []
@@ -122,12 +122,12 @@ class Chart_Span_Parser(nn.Module):
 
 class Topdown_Span_Parser(nn.Module):
     def __init__(
-        self, vocab, lstm_dim, label_hidden_dim, split_hidden_dim, n_label, drop
+        self, vocab, lstm_dim, label_hidden_dim, split_hidden_dim, drop=0, norm=False
     ):
         super(Topdown_Span_Parser, self).__init__()
         self.vocab = vocab
-        self.label_ffn = Feedforward(lstm_dim * 2, label_hidden_dim, n_label, drop)
-        self.split_ffn = Feedforward(lstm_dim * 2, split_hidden_dim, 1, drop)
+        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
+        self.split_ffn = Feedforward(lstm_dim, split_hidden_dim, 1, drop, norm)
 
     def forward(self, span):
         label_score = self.label_ffn(span)
@@ -145,6 +145,7 @@ class Topdown_Span_Parser(nn.Module):
 
         if right - left == sen_len:
             label_score[0] = float("-inf")
+
         argmax_label_score, argmax_label_index = torch.max(label_score, dim=0)
         argmax_label = self.vocab.id2parse_label(int(argmax_label_index))
 
@@ -202,7 +203,7 @@ class Topdown_Span_Parser(nn.Module):
             label_score, split_score = self.forward(spans[i][:span_num])
             _, loss = self.helper(label_score, split_score, length, 0, length, trees[i])
             batch_loss.append(loss)
-        return sum(batch_loss) / len(batch_loss)
+        return batch_loss
 
     def predict(self, spans, sen_lens):
         pred_trees = []
@@ -218,3 +219,135 @@ class Topdown_Span_Parser(nn.Module):
         increment[oracle_index] = 0
         return scores + increment
 
+
+class Global_Chart_Span_Parser(nn.Module):
+    def __init__(self, vocab, lstm_dim, label_hidden_dim, drop=0, norm=False):
+        super(Global_Chart_Span_Parser, self).__init__()
+        self.vocab = vocab
+        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
+
+    def forward(self, span):
+        label_score = self.label_ffn(span)
+        return label_score
+
+    def trace_back(self, left, right, best_split_matrix, label_index_matrix):
+        length = right - left
+        label_index = int(label_index_matrix[length - 1][left])
+        if length == 1:
+            tree = LeafParseNode(int(left), "pos", "word")
+            if label_index != self.vocab.NULL_index:
+                tree = InternalParseNode(self.vocab.id2parse_label(label_index), [tree])
+            return [tree]
+        else:
+            best_split = best_split_matrix[length - 1][left]
+            children = self.trace_back(
+                left, best_split, best_split_matrix, label_index_matrix
+            ) + self.trace_back(
+                best_split, right, best_split_matrix, label_index_matrix
+            )
+            if label_index != self.vocab.NULL_index:
+                tree = [
+                    InternalParseNode(self.vocab.id2parse_label(label_index), children)
+                ]
+            else:
+                tree = children
+            return tree
+
+    def CKY(self, label_scores, sen_len, gold=None):
+        label_index_matrix = label_scores.new_zeros(
+            (sen_len, sen_len), dtype=torch.long
+        )
+        best_split_matrix = label_scores.new_full(
+            (sen_len, sen_len), -1, dtype=torch.long
+        )
+        accum_score_matrix = label_scores.new_zeros((sen_len, sen_len))
+
+        for length in range(1, sen_len + 1):
+            for left in range(0, sen_len + 1 - length):
+                right = left + length
+                label_score = label_scores[get_position(sen_len, left, right)]
+
+                if self.training:
+                    oracle_label = gold.oracle_label(left, right)
+                    oracle_label_index = self.vocab.parse_label2id(oracle_label)
+                    label_score = self.augment(label_score, oracle_label_index)
+
+                if length == sen_len:
+                    label_score[0] = float("-inf")
+
+                argmax_label_score, argmax_label_index = torch.max(label_score, dim=0)
+                label_index_matrix[length - 1, left] = argmax_label_index
+
+                if length == 1:
+                    accum_score_matrix[length - 1, left] = argmax_label_score
+                    continue
+
+                span_scores = (
+                    accum_score_matrix[range(0, length - 1), left]
+                    + accum_score_matrix[
+                        range(length - 2, -1, -1), range(left + 1, right)
+                    ]
+                )
+                accum_score, best_split = torch.max(span_scores, dim=0)
+                best_split_matrix[length - 1][left] = best_split + left + 1
+
+                accum_score_matrix[length - 1][left] = accum_score + argmax_label_score
+        if self.training:
+            return None, accum_score_matrix[-1][0]
+
+        tree = self.trace_back(0, sen_len, best_split_matrix, label_index_matrix)
+        assert len(tree) == 1
+        return tree[0].convert(), accum_score_matrix[-1][0]
+
+    def get_gold_score(self, label_scores, sen_len, gold):
+        accum_score_matrix = label_scores.new_zeros((sen_len, sen_len))
+
+        for length in range(1, sen_len + 1):
+            for left in range(0, sen_len + 1 - length):
+                right = left + length
+                label_score = label_scores[get_position(sen_len, left, right)]
+
+                oracle_label = gold.oracle_label(left, right)
+                oracle_label_index = self.vocab.parse_label2id(oracle_label)
+                oracle_label_score = label_score[oracle_label_index]
+
+                if length == 1:
+                    accum_score_matrix[length - 1, left] = oracle_label_score
+                    continue
+
+                oracle_splits = gold.oracle_splits(left, right)
+                oracle_split = min(oracle_splits)
+
+                left_score = accum_score_matrix[oracle_split - left - 1, left]
+                right_score = accum_score_matrix[right - oracle_split - 1, oracle_split]
+
+                accum_score_matrix[length - 1][left] = (
+                    left_score + right_score + oracle_label_score
+                )
+        return accum_score_matrix[-1][0]
+
+    def get_loss(self, spans, sen_lens, trees):
+        batch_loss = []
+        for i, length in enumerate(sen_lens):
+            span_num = (1 + length) * length // 2
+            label_score = self.forward(spans[i][:span_num])
+
+            _, pred_score = self.CKY(label_score, length, trees[i])
+            gold_score = self.get_gold_score(label_score, length, trees[i])
+
+            batch_loss.append(pred_score - gold_score)
+        return batch_loss
+
+    def predict(self, spans, sen_lens):
+        pred_trees = []
+        for i, length in enumerate(sen_lens):
+            span_num = (1 + length) * length // 2
+            label_score = self.forward(spans[i][:span_num])
+            pred_tree, _ = self.CKY(label_score, length)
+            pred_trees.append(pred_tree)
+        return pred_trees
+
+    def augment(self, scores, oracle_index):
+        increment = torch.ones_like(scores)
+        increment[oracle_index] = 0
+        return scores + increment

@@ -7,7 +7,7 @@ import torch
 import torch.utils.data as Data
 from ucca.convert import passage2file
 
-from utils import Corpus, Trainer, Vocab, collate_fn, collate_fn_cuda
+from parser.utils import Corpus, Trainer, Vocab, collate_fn
 
 
 @torch.no_grad()
@@ -16,10 +16,13 @@ def write_test(parser, test, path):
 
     test_predicted = []
     for batch in test:
-        word_idxs, ext_word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
+        word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
-        pred_passages = parser.parse(word_idxs, ext_word_idxs, char_idxs, passages)
+        if torch.cuda.is_available():
+            word_idxs = word_idxs.cuda()
+            char_idxs = char_idxs.cuda()
+        pred_passages = parser.parse(word_idxs, char_idxs, passages)
         test_predicted.extend(pred_passages)
 
     if not os.path.exists(path):
@@ -36,39 +39,35 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing")
     parser.add_argument("--test_path", required=True, help="test data dir")
     parser.add_argument("--model_path", required=True, help="path to save the model")
-    parser.add_argument(
-        "--pred_path", required=True, help="dic to save the dev predict passages"
-    )
+    parser.add_argument("--pred_path", required=True, help="save predict passages")
 
-    parser.add_argument("--gpu", type=int, default=-1, help="gpu id")
+    parser.add_argument("--gpu", default=-1, help="gpu id")
     parser.add_argument("--thread", type=int, default=4, help="thread num")
     parser.add_argument("--batch_size", type=int, default=10, help="batch size")
     args = parser.parse_args()
 
     # choose GPU and init seed
-    if args.gpu >= 0:
-        use_cuda = True
-        torch.cuda.set_device(args.gpu)
-        torch.set_num_threads(args.thread)
-        print("using GPU device : %d" % args.gpu)
-    else:
-        use_cuda = False
-        torch.set_num_threads(args.thread)
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    torch.set_num_threads(args.thread)
+    print("using GPU device : %s" % args.gpu)
 
     # read test
     print("loading datasets...")
     test = Corpus(args.test_path)
     print(test)
 
-    device = "cuda:" + str(args.gpu) if use_cuda else "cpu"
     # reload parser
-    ucca_parser = torch.load(args.model_path, map_location=device)
+    print("reloading parser...")
+    vocab_path = os.path.join(args.model_path, "vocab.pt")
+    state_path = os.path.join(args.model_path, "parser.pt")
+    config_path = os.path.join(args.model_path, "config.json")
+    ucca_parser = UCCA_Parser.load(vocab_path, config_path, state_path)
 
     test_loader = Data.DataLoader(
         dataset=test.generate_inputs(ucca_parser.vocab, False),
         batch_size=args.batch_size,
         shuffle=False,
-        collate_fn=collate_fn if not use_cuda else collate_fn_cuda,
+        collate_fn=collate_fn,
     )
 
     print("predicting test files...")

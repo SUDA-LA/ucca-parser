@@ -1,0 +1,37 @@
+{
+    "ucca":
+    {
+        "type": "top-down", 
+        "encoder": "attention",
+        "partition": true,
+        
+        "word_dim": 300, 
+        "char_dim": 100, 
+        "position_dim": 300, 
+        "charlstm_dim": 300, 
+        "lstm_layer": 2, 
+        "lstm_dim": 400, 
+        "lstm_drop": 0.4, 
+        "emb_drop": 0.4, 
+        "char_drop": 0.2,
+
+        "d_model": 600, 
+        "d_k": 64, 
+        "d_v": 64, 
+        "n_head": 8, 
+        "attn_layer": 6, 
+        "max_seq_len": 300, 
+        "d_inner": 1200, 
+        "n_warmup_steps": 42, 
+        "label_hidden": 300, 
+        "split_hidden": 300, 
+        "ffn_drop": 0, 
+        "mlp_label_dim": 100,
+
+        "batch_size": 100, 
+        "epoch": 150, 
+        "patience": 15, 
+        "lr": 0.001,
+        "optimizer": "adam"
+    }
+}

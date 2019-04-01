@@ -5,6 +5,7 @@ from itertools import chain
 from parser.convert import InternalParseNode
 
 import torch
+import torch.nn.init as init
 
 
 class Vocab(object):
@@ -19,6 +20,7 @@ class Vocab(object):
 
         self._char = [self.PAD, self.UNK] + char
         self._word = [self.PAD, self.START, self.STOP, self.UNK] + word
+        self.num_train_word = len(self._word)
 
         self._edge_label = [self.NULL] + edge_label
         self._parse_label = [()] + parse_label
@@ -29,39 +31,24 @@ class Vocab(object):
         self._edge_label2id = {e: i for i, e in enumerate(self._edge_label)}
         self._parse_label2id = {p: i for i, p in enumerate(self._parse_label)}
 
-    @property
-    def PAD_index(self):
-        return self._word2id[self.PAD]
+    def read_embedding(self, dim, pre_emb=None):
+        if pre_emb:
+            assert dim == pre_emb.dim
+            self.extend(pre_emb.words)
+            embeddings = torch.zeros(self.num_word, pre_emb.dim)
+            init.normal_(embeddings, 0, 1 / pre_emb.dim ** 0.5)
+            for i, word in enumerate(self._word):
+                if word in pre_emb:
+                    embeddings[i] = pre_emb[word]
+            return embeddings
+        else:
+            embeddings = torch.zeros(self.num_word, dim)
+            init.normal_(embeddings, 0, 1 / dim ** 0.5)
+            return embeddings
 
-    @property
-    def STOP_index(self):
-        return self._word2id[self.STOP]
-
-    @property
-    def NULL_index(self):
-        return self._parse_label2id[()]
-
-
-    def read_embedding(self, fname):
-        print('reading pretrained embedding...')   
-        fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
-        n, d = map(int, fin.readline().split())
-        splits = [line.split() for line in fin]
-        # read pretrained embedding file
-        ext_words, vectors = zip(*[
-            (split[0], list(map(float, split[1:]))) for split in splits
-        ])
-
-        embdim = len(vectors[0])
-        ext_words = list(ext_words)
-        ext_words = [self.PAD, self.START, self.STOP, self.UNK] + ext_words
-        vectors = list(vectors)
-        vectors = [[0]*embdim for _ in range(4)] + vectors
-        
-        self._ext_word2id = {w: i for i, w in enumerate(ext_words)}
-
-        vectors = torch.tensor(vectors) / torch.std(torch.tensor(vectors))
-        return vectors
+    def extend(self, words):
+        self._word.extend(sorted(set(words).difference(self._word2id)))
+        self._word2id = {word: i for i, word in enumerate(self._word)}
  
     @staticmethod
     def collect(corpus):
@@ -89,6 +76,22 @@ class Vocab(object):
 
         chars = sorted(set(''.join(words)))
         return chars, words, edge_label, parse_label
+
+    @property
+    def PAD_index(self):
+        return self._word2id[self.PAD]
+
+    @property
+    def STOP_index(self):
+        return self._word2id[self.STOP]
+
+    @property
+    def UNK_index(self):
+        return self._word2id[self.UNK]
+
+    @property
+    def NULL_index(self):
+        return self._parse_label2id[()]
 
     @property
     def num_word(self):
@@ -128,13 +131,11 @@ class Vocab(object):
     def word2id(self, word):
         assert (isinstance(word, str) or isinstance(word, list))
         if isinstance(word, str):
-            word_idx = self._word2id.get(word, self._word2id[self.UNK])
-            ext_word_idx = self._ext_word2id.get(word, self._ext_word2id[self.UNK])
-            return word_idx, ext_word_idx
+            word_idx = self._word2id.get(word, self.UNK_index)
+            return word_idx
         elif isinstance(word, list):
-            word_idxs = [self._word2id.get(w, self._word2id[self.UNK]) for w in word]
-            ext_word_idxs = [self._ext_word2id.get(w, self._ext_word2id[self.UNK]) for w in word]
-            return word_idxs, ext_word_idxs
+            word_idxs = [self._word2id.get(w, self.UNK_index) for w in word]
+            return word_idxs
 
     def char2id(self, char, max_len=20):
         assert (isinstance(char, str) or isinstance(char, list))

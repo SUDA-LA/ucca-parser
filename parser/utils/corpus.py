@@ -35,10 +35,10 @@ class Corpus(object):
         return passages
 
     def generate_inputs(self, vocab, is_training=False):
-        word_idxs, ext_word_idxs, char_idxs = [], [], []
+        word_idxs, char_idxs = [], []
         trees, all_nodes, all_remote = [], [], []
         for instance in self.instances:
-            _word_idxs, _ext_word_idxs = vocab.word2id([vocab.START] + instance.words + [vocab.STOP])
+            _word_idxs = vocab.word2id([vocab.START] + instance.words + [vocab.STOP])
             _char_idxs = vocab.char2id([vocab.START] + instance.words + [vocab.STOP])
 
             nodes, (heads, deps, labels) = instance.gerenate_remote()
@@ -51,7 +51,6 @@ class Corpus(object):
                 _remotes = (heads, deps, labels)
 
             word_idxs.append(torch.tensor(_word_idxs))
-            ext_word_idxs.append(torch.tensor(_ext_word_idxs))
             char_idxs.append(torch.tensor(_char_idxs))
 
             if is_training:
@@ -65,10 +64,45 @@ class Corpus(object):
 
         return TensorDataSet(
             word_idxs,
-            ext_word_idxs,
             char_idxs,
             self.passages,
             trees,
             all_nodes,
             all_remote,
         )
+
+
+class Embedding(object):
+    def __init__(self, words, vectors):
+        super(Embedding, self).__init__()
+
+        self.words = words
+        self.vectors = vectors
+        self.pretrained = {w: v for w, v in zip(words, vectors)}
+
+    def __len__(self):
+        return len(self.words)
+
+    def __contains__(self, word):
+        return word in self.pretrained
+
+    def __getitem__(self, word):
+        return self.pretrained[word]
+
+    @property
+    def dim(self):
+        return len(self.vectors[0])
+
+    @classmethod
+    def load(cls, fname, smooth=True):
+        with open(fname, 'r') as f:
+            lines = [line for line in f]
+        splits = [line.split() for line in lines[1:]]
+        reprs = [(s[0], list(map(float, s[1:]))) for s in splits]
+        words, vectors = map(list, zip(*reprs))
+        vectors = torch.tensor(vectors)
+        if smooth:
+            vectors /= torch.std(vectors)
+        embedding = cls(words, vectors)
+
+        return embedding
