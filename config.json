@@ -23,9 +23,9 @@
         "max_seq_len": 300, 
         "d_inner": 1200, 
         "n_warmup_steps": 42, 
-        "label_hidden": 300, 
-        "split_hidden": 300, 
-        "ffn_drop": 0, 
+        "label_hidden": 200, 
+        "split_hidden": 200, 
+        "ffn_drop": 0.2, 
         "mlp_label_dim": 100,
 
         "batch_size": 100, 
