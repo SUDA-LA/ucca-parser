@@ -18,7 +18,7 @@ class UCCA_Parser(torch.nn.Module):
         self.vocab = vocab
         self.encoder = args.encoder
         self.type = args.type
-        if args.encoder == 'lstm':
+        if args.encoder == "lstm":
             self.shared_encoder = LSTM_Encoder(
                 vocab=vocab,
                 ext_emb=pre_emb,

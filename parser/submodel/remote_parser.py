@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from parser.module import MLP, Biaffine
 from parser.convert import get_position
+from ucca.layer0 import Terminal
 
 
 class Remote_Parser(nn.Module):
@@ -82,6 +83,6 @@ class Remote_Parser(nn.Module):
             for head, label_score in zip(heads, label_scores):
                 for i, score in enumerate(label_score):
                     label = self.vocab.id2edge_label(score)
-                    if label is not self.vocab.NULL:
+                    if label is not self.vocab.NULL and not nodes[i]._tag == "PNCT":
                         passage.layer("1").add_remote(nodes[i], label, nodes[head])
         return passages

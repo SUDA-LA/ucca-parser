@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch
 import torch.utils.data as Data
 
-from parser.utils import Corpus, Trainer, Vocab, collate_fn, get_config, Embedding
+from parser.utils import Corpus, Trainer, Vocab, collate_fn, get_config, Embedding, UCCA_Evaluator, MyScheduledOptim
 
 
 if __name__ == "__main__":
@@ -52,6 +52,7 @@ if __name__ == "__main__":
     if args.emb_path:
         print("reading pre-trained embedding...")
         pre_emb = Embedding.load(args.emb_path)
+        print("pre-trained words:%d, dim=%d in %s" % (len(pre_emb), pre_emb.dim, args.emb_path))
     else:
         pre_emb = None
     embedding = vocab.read_embedding(config.ucca.word_dim, pre_emb)
@@ -83,10 +84,19 @@ if __name__ == "__main__":
         optimizer = optim.Adam(ucca_parser.parameters(), lr=config.ucca.lr)
     elif ucca_parser.encoder == "attention":
         optimizer = optim.Adam(ucca_parser.parameters(), lr=config.ucca.lr)
+        # optimizer = MyScheduledOptim(optimizer)
 
+    ucca_evaluator = UCCA_Evaluator(
+        parser=ucca_parser,
+        gold_dev_dic=args.dev_path, 
+        pred_dev_dic=os.path.join(args.save_path, "predict-dev"),
+        temp_pred_dic=os.path.join(args.save_path, "temp-dev"),
+        )
+        
     trainer = Trainer(
         parser=ucca_parser,
         optimizer=optimizer,
+        evaluator=ucca_evaluator,
         batch_size=config.ucca.batch_size,
         epoch=config.ucca.epoch,
         patience=config.ucca.patience,

@@ -66,3 +66,21 @@ class ScheduledOptim:
 
     def schedule(self, score):
         self._scheduler.step(score)
+
+
+class MyScheduledOptim:
+    def __init__(self, optimizer):
+        self._optimizer = optimizer
+        self._scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, "max", factor=0.5, patience=4, verbose=True, eps=1e-12
+        )
+
+    def step(self):
+        self._optimizer.step()
+
+    def zero_grad(self):
+        "Zero out the gradients by the inner optimizer"
+        self._optimizer.zero_grad()
+
+    def schedule(self, fscore):
+        self._scheduler.step(fscore)
