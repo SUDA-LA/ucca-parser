@@ -7,7 +7,7 @@
 train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_English-Wiki
 dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
 emb_path=/data/wjiang/data/embedding/cc.en.300.vec
-dic=./experiment/english-topdown-lstm
+dic=./exp/english-chart-lstm
 
 save_file=$dic/
 gpu=7

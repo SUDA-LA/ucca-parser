@@ -36,24 +36,34 @@ class Trainer(object):
         word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
-        for i in range(0, len(word_idxs), 5):
-            span_loss, remote_loss = self.parser.parse(
-                word_idxs[i : i + 5].cuda()
-                if torch.cuda.is_available()
-                else word_idxs[i : i + 5],
-                char_idxs[i : i + 5].cuda()
-                if torch.cuda.is_available()
-                else char_idxs[i : i + 5],
-                passages[i : i + 5],
-                trees[i : i + 5],
-                all_nodes[i : i + 5],
-                all_remote[i : i + 5],
-            )
+        batch_size = len(word_idxs)
+        word_idxs = torch.split(word_idxs, 5, dim=0)
+        char_idxs = torch.split(char_idxs, 5, dim=0)
+        for i, word_idx, char_idx in zip(range(0, batch_size, 5), word_idxs, char_idxs):
+            if torch.cuda.is_available():
+                span_loss, remote_loss = self.parser.parse(
+                    word_idx.cuda(),
+                    char_idx.cuda(),
+                    passages[i : i + 5],
+                    trees[i : i + 5],
+                    all_nodes[i : i + 5],
+                    all_remote[i : i + 5],
+                )
+            else:
+                span_loss, remote_loss = self.parser.parse(
+                    word_idx,
+                    char_idx,
+                    passages[i : i + 5],
+                    trees[i : i + 5],
+                    all_nodes[i : i + 5],
+                    all_remote[i : i + 5],
+                ) 
             span_losses += sum(span_loss)
             remote_losses += sum(remote_loss)
-        loss = span_losses / len(word_idxs) + remote_losses
+        loss = span_losses / batch_size + remote_losses
         loss.backward()
-        nn.utils.clip_grad_norm_(self.parser.parameters(), 5.0)
+        if self.parser.encoder == "attention" or self.parser.type == "chart":
+            nn.utils.clip_grad_norm_(self.parser.parameters(), 5.0)
         self.optimizer.step()
         return loss
 

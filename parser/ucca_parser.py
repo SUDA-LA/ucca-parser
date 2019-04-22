@@ -116,7 +116,7 @@ class UCCA_Parser(torch.nn.Module):
 
     def save(self, fname):
         state = {
-            'embeddings': self.shared_encoder.word_embedding.weight,
+            'embeddings': self.shared_encoder.ext_word_embedding.weight,
             'state_dict': self.state_dict(),
         }
         torch.save(state, fname)

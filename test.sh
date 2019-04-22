@@ -2,7 +2,7 @@
 
 
 # dic=/data/wjiang/UCCA/UCCA-Parser-pre/experiment/english-topdown
-dic=./debug/result
+dic=./experiment/english-topdown-lstm/
 test_path=/data/wjiang/UCCA/test-data/test-xml/UCCA_English-Wiki
 pred_path=$dic/UCCA_English-Wiki
 model_path=$dic
