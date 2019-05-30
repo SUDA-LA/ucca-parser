@@ -23,6 +23,7 @@
         "max_seq_len": 300, 
         "d_inner": 1200, 
         "n_warmup_steps": 42, 
+        
         "label_hidden": 200, 
         "split_hidden": 200, 
         "ffn_drop": 0.2, 

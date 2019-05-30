@@ -25,7 +25,7 @@ class Train(object):
         subparser.add_argument("--dev_path", required=True, help="dev data dir")
         subparser.add_argument("--emb_path", help="pretrained embedding path", default="")
         subparser.add_argument("--save_path", required=True, help="dic to save all file")
-        subparser.add_argument("--config_path", required=True, help="dic to save all file")
+        subparser.add_argument("--config_path", required=True, help="init config file")
         subparser.add_argument("--test_wiki_path", help="wiki test data dir", default="")
         subparser.add_argument("--test_20k_path", help="20k data dir", default="")
         subparser.set_defaults(func=self)
