@@ -115,3 +115,4 @@ class Trainer(object):
         print("train finished with epoch: %d / %d" % (e, self.epoch))
         print("the best epoch is %d , the best F1 on dev is %f" % (best_epoch, best_f))
         print(str(datetime.datetime.now()))
+        self.evaluator.remove_temp()

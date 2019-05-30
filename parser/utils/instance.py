@@ -32,7 +32,10 @@ class Instance(object):
 
     def gerenate_remote(self):
         def get_span(node):
-            terminals = node.get_terminals()
+            children = [i.child for i in node.outgoing if not i.attrib.get("remote")]
+            terminals = [t for c in children for t in c.get_terminals()]
+            terminals = list(sorted(terminals, key=lambda x: x.position))
+            # terminals = node.get_terminals()
             return (terminals[0].position - 1, terminals[-1].position)
 
         if "1" not in self.passage._layers:

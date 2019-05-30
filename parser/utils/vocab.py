@@ -147,9 +147,9 @@ class Vocab(object):
 
     def edge_label2id(self, label):
         if isinstance(label, str):
-            return self._edge_label2id[label]
+            return self._edge_label2id.get(label, 0)
         else:
-            return [self._edge_label2id[l] for l in label]
+            return [self._edge_label2id.get(l, 0) for l in label]
     
     def id2parse_label(self, id):
         return self._parse_label[id]

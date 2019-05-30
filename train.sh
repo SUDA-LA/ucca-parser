@@ -1,24 +1,25 @@
 #!/bin/bash
 
-# train_path=./debug/train
-# dev_path=./debug/dev
-# emb_path=/data/wjiang/data/embedding/debug
-# dic=./debug/result
 train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_English-Wiki
 dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
 emb_path=/data/wjiang/data/embedding/cc.en.300.vec
-dic=./exp/english-chart-lstm
+save_path=./exp/baseline/debug
+config_path=./config.json
+test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
+test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-20K
 
-save_file=$dic/
 gpu=7
 
-if [ ! -d "$dic" ]; then
-    mkdir "$dic"
+if [ ! -d "$save_path" ]; then
+    mkdir "$save_path"
 fi
 
-python -u train.py \
+python -u run.py train\
     --gpu=$gpu \
-    --save_path=$save_file \
+    --save_path=$save_path \
     --train_path=$train_path \
+    --test_wiki_path=$test_wiki_path \
+    --test_20k_path=$test_20k_path \
     --dev_path=$dev_path \
-    --emb_path=$emb_path
+    --emb_path=$emb_path \
+    --config_path=$config_path
