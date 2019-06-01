@@ -14,7 +14,7 @@ pytorch == 1.0.0
 ucca == 1.0.127
 ```
 
-Node that the code has not been tested on the newest version of ucca module.
+Note that the code has not been tested on the newest version of ucca module.
 
 ## Datasets
 
