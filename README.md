@@ -2,9 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-For simplicity, this version of the implementation does not use any extra feature in the corpus, except pre-trained embeddings. We use Char-LSTM in place of embeddings of POS, dependency labels and entity labels, resulting in about 0.4% drop on the results of test data. 
-
-Other model choices such as using chart decoding or using self-attentive encoder are also included in this version. You can choose in config.json.
+This version of the implementation uses lexical features in the corpus, including POS tags, dependency labels, entity labels. 
 
 ## Requirements
 
@@ -26,8 +24,8 @@ Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
-| English-Topdown-CharLSTM | 79.5        | 43.8       | 79.0        | 77.6              | 48.0             | 77.2              | 73.3                | 19.0            | 72.3             |
-| German-Topdown-CharLSTM  | 83.0        | 53.2       | 82.4        | /                 | /                | /                 | 83.6                | 56.5            | 83.1             |
+| English-Topdown-Lexical | 79.5        | 43.8       | 79.0        | 77.6              | 48.0             | 77.2              | 73.3                | 19.0            | 72.3             |
+| German-Topdown-Lexical  | 83.0        | 53.2       | 82.4        | /                 | /                | /                 | 83.6                | 56.5            | 83.1             |
 
 ## Usage
 
@@ -122,9 +120,3 @@ optional arguments:
 ## Convertion
 
 Convertion codes are included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery codes are included in `parser.submodel.remote_parser.py` independently.
-
-## TODO
-
-1、Add the multilingual model codes
-
-2、Add the models using embeddings of POS tags, dependency labels and named entities.
