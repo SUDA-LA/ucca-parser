@@ -39,12 +39,15 @@ class UCCA_Evaluator(object):
         self.parser.eval()
         predicted = []
         for batch in loader:
-            lang_idxs, word_idxs, char_idxs, passages, trees, all_nodes, all_remote = batch
+            lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = batch
             lang_idxs = lang_idxs.cuda() if torch.cuda.is_available() else lang_idxs
             word_idxs = word_idxs.cuda() if torch.cuda.is_available() else word_idxs
-            char_idxs = char_idxs.cuda() if torch.cuda.is_available() else char_idxs
+            pos_idxs = pos_idxs.cuda() if torch.cuda.is_available() else pos_idxs
+            dep_idxs = dep_idxs.cuda() if torch.cuda.is_available() else dep_idxs
+            ent_idxs = ent_idxs.cuda() if torch.cuda.is_available() else ent_idxs
+            ent_iob_idxs = ent_iob_idxs.cuda() if torch.cuda.is_available() else ent_iob_idxs
 
-            pred_passages = self.parser.parse(lang_idxs, word_idxs, char_idxs, passages)
+            pred_passages = self.parser.parse(lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
             predicted.extend(pred_passages)
         return predicted
         

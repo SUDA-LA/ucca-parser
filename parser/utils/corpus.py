@@ -40,11 +40,15 @@ class Corpus(object):
         return passages
 
     def generate_inputs(self, vocab, is_training=False):
-        lang_idxs, word_idxs, char_idxs = [], [], []
+        lang_idxs, word_idxs = [], []
+        pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs = [], [], [], []
         trees, all_nodes, all_remote = [], [], []
         for instance in self.instances:
             _word_idxs = vocab.word2id([vocab.START] + instance.words + [vocab.STOP])
-            _char_idxs = vocab.char2id([vocab.START] + instance.words + [vocab.STOP])
+            _pos_idxs = vocab.pos2id([vocab.START] + instance.pos + [vocab.STOP])
+            _dep_idxs = vocab.dep2id([vocab.START] + instance.dep + [vocab.STOP])
+            _entity_idxs = vocab.entity2id([vocab.START] + instance.ent + [vocab.STOP])
+            _iob_idxs = vocab.ent_iob2id([vocab.START] + instance.ent_iob + [vocab.STOP])
             _lang_idxs = [vocab.lang2id(self.lang)] * len(_word_idxs)
 
             nodes, (heads, deps, labels) = instance.gerenate_remote()
@@ -58,7 +62,10 @@ class Corpus(object):
 
             lang_idxs.append(torch.tensor(_lang_idxs))
             word_idxs.append(torch.tensor(_word_idxs))
-            char_idxs.append(torch.tensor(_char_idxs))
+            ent_iob_idxs.append(torch.tensor(_iob_idxs))
+            pos_idxs.append(torch.tensor(_pos_idxs))
+            dep_idxs.append(torch.tensor(_dep_idxs))
+            ent_idxs.append(torch.tensor(_entity_idxs))
 
             if is_training:
                 trees.append(instance.tree)
@@ -72,7 +79,10 @@ class Corpus(object):
         return TensorDataSet(
             lang_idxs,
             word_idxs,
-            char_idxs,
+            pos_idxs,
+            dep_idxs,
+            ent_idxs,
+            ent_iob_idxs,
             self.passages,
             trees,
             all_nodes,

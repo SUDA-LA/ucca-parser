@@ -16,11 +16,14 @@ class TensorDataSet(Data.Dataset):
 
 
 def collate_fn(data):
-    lang_idx, word_idx, char_idx, passages, trees, all_nodes, all_remote = zip(*data)
+    lang_idx, word_idx, pos_idx, dep_idx, ent_idx, ent_iob_idx, passages, trees, all_nodes, all_remote = zip(*data)
     return (
         pad_sequence(lang_idx, True),
         pad_sequence(word_idx, True),
-        pad_sequence(char_idx, True),
+        pad_sequence(pos_idx, True),
+        pad_sequence(dep_idx, True),
+        pad_sequence(ent_idx, True),
+        pad_sequence(ent_iob_idx, True),
         passages,
         trees,
         all_nodes,

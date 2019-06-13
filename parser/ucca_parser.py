@@ -4,7 +4,6 @@ from .submodel import (
     Chart_Span_Parser,
     Remote_Parser,
     LSTM_Encoder,
-    Attention_Encoder,
     Topdown_Span_Parser,
     Global_Chart_Span_Parser,
 )
@@ -16,77 +15,56 @@ class UCCA_Parser(torch.nn.Module):
     def __init__(self, vocab, args, pre_emb=None):
         super(UCCA_Parser, self).__init__()
         self.vocab = vocab
-        self.encoder = args.encoder
         self.type = args.type
-        if args.encoder == "lstm":
-            self.shared_encoder = LSTM_Encoder(
-                vocab=vocab,
-                lang_dim=args.lang_dim,
-                word_dim=args.word_dim,
-                char_dim=args.char_dim,
-                charlstm_dim=args.charlstm_dim,
-                lstm_dim=args.lstm_dim,
-                lstm_layer=args.lstm_layer,
-                emb_drop=args.emb_drop,
-                lstm_drop=args.lstm_drop,
-                char_drop=args.char_drop,
-            )
-        elif args.encoder == "attention":
-            self.shared_encoder = Attention_Encoder(
-                vocab=vocab,
-                ext_emb=pre_emb,
-                max_seq_len=args.max_seq_len,
-                word_dim=args.word_dim,
-                position_dim=args.position_dim,
-                char_dim=args.char_dim,
-                charlstm_dim=args.charlstm_dim,
-                n_layers=args.attn_layer,
-                n_head=args.n_head,
-                d_k=args.d_k,
-                d_v=args.d_v,
-                d_model=args.d_model,
-                d_inner=args.d_inner,
-                emb_drop=args.emb_drop,
-                char_drop=args.char_drop,
-                relu_drop=0.1,
-                attention_drop=0.2,
-                residual_drop=0.2,
-                partition=args.partition,
-            )
+        
+        self.shared_encoder = LSTM_Encoder(
+            vocab=vocab,
+            lang_dim=args.lang_dim,
+            word_dim=args.word_dim,
+            pos_dim=args.pos_dim,
+            dep_dim=args.dep_dim,
+            ent_dim=args.ent_dim,
+            ent_iob_dim=args.ent_iob_dim,
+            lstm_dim=args.lstm_dim,
+            lstm_layer=args.lstm_layer,
+            emb_drop=args.emb_drop,
+            lstm_drop=args.lstm_drop,
+        )
+
         if args.type == "chart":
             self.span_parser = Chart_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim,
                 label_hidden_dim=args.label_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False,
             )
         elif args.type == "top-down":
             self.span_parser = Topdown_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim,
                 label_hidden_dim=args.label_hidden,
                 split_hidden_dim=args.split_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False,
             )
         elif args.type == "global-chart":
             self.span_parser = Global_Chart_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim,
                 label_hidden_dim=args.label_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False,
             )
 
         self.remote_parser = Remote_Parser(
             vocab=vocab,
-            lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+            lstm_dim=args.lstm_dim,
             mlp_label_dim=args.mlp_label_dim,
         )
 
-    def parse(self, lang_idxs, word_idxs, char_idxs, passages, trees=None, all_nodes=None, all_remote=None):
-        spans, sen_lens = self.shared_encoder(lang_idxs, word_idxs, char_idxs)
+    def parse(self, lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees=None, all_nodes=None, all_remote=None):
+        spans, sen_lens = self.shared_encoder(lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs)
 
         if self.training:
             span_loss = self.span_parser.get_loss(spans, sen_lens, trees)

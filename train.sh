@@ -8,7 +8,7 @@ en_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
 fr_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_French-20K
 de_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_German-20K
 
-save_path=./exp/multilingual/debug
+save_path=./exp/multilingual-lexical/debug
 config_path=./config.json
 
 en_test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
@@ -17,7 +17,7 @@ fr_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_French-20K
 de_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_German-20K
 
 
-gpu=6
+gpu=-1
 
 if [ ! -d "$save_path" ]; then
     mkdir "$save_path"

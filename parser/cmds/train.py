@@ -43,8 +43,6 @@ class Train(object):
     def __call__(self, args):
         config = get_config(args.config_path)
         assert config.ucca.type in ["chart", "top-down", "global-chart"]
-        assert config.ucca.encoder in ["lstm"]
-        assert config.ucca.partition in [True, False]
 
         with open(os.path.join(args.save_path, "config.json"), "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False, default=lambda o: o.__dict__, indent=4)
@@ -121,7 +119,7 @@ class Train(object):
 
         if args.en_test_wiki_path:
             print("evaluating en wiki test data : %s" % (args.en_test_wiki_path))
-            test = Corpus(args.en_test_wiki_path)
+            test = Corpus(args.en_test_wiki_path, "en")
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
@@ -138,7 +136,7 @@ class Train(object):
 
         if args.en_test_20k_path:
             print("evaluating en 20K test data : %s" % (args.en_test_20k_path))
-            test = Corpus(args.en_test_20k_path)
+            test = Corpus(args.en_test_20k_path, "en")
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
@@ -155,7 +153,7 @@ class Train(object):
         
         if args.fr_test_20k_path:
             print("evaluating fr 20K test data : %s" % (args.fr_test_20k_path))
-            test = Corpus(args.fr_test_20k_path)
+            test = Corpus(args.fr_test_20k_path, "fr")
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
@@ -172,7 +170,7 @@ class Train(object):
 
         if args.de_test_20k_path:
             print("evaluating de 20K test data : %s" % (args.de_test_20k_path))
-            test = Corpus(args.de_test_20k_path)
+            test = Corpus(args.de_test_20k_path, "de")
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
