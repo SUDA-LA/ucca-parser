@@ -25,8 +25,8 @@ class UCCA_Evaluator(object):
         self.gold_dic = gold_dic
         self.pred_dic = pred_dic
 
-        self.temp_gold_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-")
-        self.temp_pred_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-gold-")
+        self.temp_gold_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-gold-")
+        self.temp_pred_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-")
         self.best_F = 0
 
         for dic in self.gold_dic:

@@ -108,15 +108,11 @@ class UCCA_Parser(torch.nn.Module):
         vocab = torch.load(vocab_path)
         config = get_config(config_path)
 
-        network = cls(vocab, config.ucca, state['embeddings'])
-        network.load_state_dict(state['state_dict'])
+        network.load_state_dict(state)
         network.to(device)
 
         return network
 
     def save(self, fname):
-        state = {
-            'embeddings': self.shared_encoder.ext_word_embedding.weight,
-            'state_dict': self.state_dict(),
-        }
-        torch.save(state, fname)
+        self.state_dict()
+        torch.save(self.state_dict(), fname)
