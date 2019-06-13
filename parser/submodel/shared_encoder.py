@@ -15,7 +15,7 @@ class LSTM_Encoder(nn.Module):
     def __init__(
         self,
         vocab,
-        ext_emb,
+        lang_dim,
         word_dim,
         char_dim,
         charlstm_dim,
@@ -27,13 +27,13 @@ class LSTM_Encoder(nn.Module):
     ):
         super(LSTM_Encoder, self).__init__()
         self.vocab = vocab
-        self.ext_word_embedding = nn.Embedding.from_pretrained(ext_emb)
-        self.word_embedding = nn.Embedding(vocab.num_train_word, word_dim, padding_idx=0)
+        self.lang_embedding = nn.Embedding(vocab.num_lang, lang_dim)
+        self.word_embedding = nn.Embedding(vocab.num_word, word_dim, padding_idx=0)
 
         self.charlstm = CharLSTM(vocab.num_char, char_dim, charlstm_dim, char_drop)
 
         self.lstm = nn.LSTM(
-            input_size=word_dim + charlstm_dim,
+            input_size=word_dim + charlstm_dim + lang_dim,
             hidden_size=lstm_dim // 2,
             bidirectional=True,
             num_layers=lstm_layer,
@@ -46,23 +46,22 @@ class LSTM_Encoder(nn.Module):
     def reset_parameters(self):
         self.word_embedding.weight.data.zero_()
 
-    def forward(self, word_idxs, char_idxs):
+    def forward(self, lang_idxs, word_idxs, char_idxs):
         mask = word_idxs.ne(self.vocab.PAD_index)
         sen_lens = mask.sum(1)
         sorted_lens, sorted_idx = torch.sort(sen_lens, dim=0, descending=True)
         reverse_idx = torch.sort(sorted_idx, dim=0)[1]
         max_len = sorted_lens[0]
 
-        word_idxs = word_idxs[:, :max_len]
+        lang_idxs, word_idxs = lang_idxs[:, :max_len], word_idxs[:, :max_len]
         char_idxs, mask = char_idxs[:, :max_len], mask[:, :max_len]
 
-        word_emb = self.ext_word_embedding(word_idxs)
-        word_emb += self.word_embedding(word_idxs.masked_fill_(word_idxs.ge(self.word_embedding.num_embeddings),
-                               self.vocab.UNK_index))
+        lang_emb = self.lang_embedding(lang_idxs)
+        word_emb = self.word_embedding(word_idxs)
         char_vec = self.charlstm(char_idxs[mask])
         char_vec = pad_sequence(torch.split(char_vec, sen_lens.tolist()), True)
 
-        emb = torch.cat((word_emb, char_vec), -1)
+        emb = torch.cat((lang_emb, word_emb, char_vec), -1)
         emb = self.emb_drop(emb)
 
         emb = emb[sorted_idx]

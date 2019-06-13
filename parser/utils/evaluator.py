@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import torch
 from ucca.convert import passage2file
@@ -23,23 +24,32 @@ class UCCA_Evaluator(object):
         self.parser = parser
         self.gold_dic = gold_dic
         self.pred_dic = pred_dic
-        self.temp_pred_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-")
+
+        self.temp_gold_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-")
+        self.temp_pred_dic = tempfile.TemporaryDirectory(prefix="ucca-eval-gold-")
         self.best_F = 0
+
+        for dic in self.gold_dic:
+            for file in sorted(os.listdir(dic)):
+                src_path = os.path.join(dic, file)
+                shutil.copy(src_path, self.temp_gold_dic.name)
 
     @torch.no_grad()
     def predict(self, loader):
         self.parser.eval()
         predicted = []
         for batch in loader:
-            word_idxs, char_idxs, passages, trees, all_nodes, all_remote = batch
+            lang_idxs, word_idxs, char_idxs, passages, trees, all_nodes, all_remote = batch
+            lang_idxs = lang_idxs.cuda() if torch.cuda.is_available() else lang_idxs
             word_idxs = word_idxs.cuda() if torch.cuda.is_available() else word_idxs
             char_idxs = char_idxs.cuda() if torch.cuda.is_available() else char_idxs
 
-            pred_passages = self.parser.parse(word_idxs, char_idxs, passages)
+            pred_passages = self.parser.parse(lang_idxs, word_idxs, char_idxs, passages)
             predicted.extend(pred_passages)
         return predicted
         
     def remove_temp(self):
+        self.temp_gold_dic.cleanup()
         self.temp_pred_dic.cleanup()
 
     def compute_accuracy(self, loader):
@@ -48,7 +58,7 @@ class UCCA_Evaluator(object):
 
         child = subprocess.Popen(
             "python -m scripts.evaluate_standard {} {} -f".format(
-                self.gold_dic, self.temp_pred_dic.name
+                self.temp_gold_dic.name, self.temp_pred_dic.name
             ),
             shell=True,
             stdout=subprocess.PIPE,

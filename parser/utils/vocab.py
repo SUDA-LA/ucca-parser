@@ -10,7 +10,7 @@ import torch.nn.init as init
 
 class Vocab(object):
     def __init__(self, corpus):
-        char, word, edge_label, parse_label = self.collect(corpus)
+        char, word, edge_label, parse_label, language = self.collect(corpus)
 
         self.UNK = "<UNK>"
         self.START = "<START>"
@@ -19,6 +19,7 @@ class Vocab(object):
         self.NULL = "<NULL>"
 
         self._char = [self.PAD, self.UNK] + char
+        self._lang = language
         self._word = [self.PAD, self.START, self.STOP, self.UNK] + word
         self.num_train_word = len(self._word)
 
@@ -30,6 +31,7 @@ class Vocab(object):
 
         self._edge_label2id = {e: i for i, e in enumerate(self._edge_label)}
         self._parse_label2id = {p: i for i, p in enumerate(self._parse_label)}
+        self._lang2id = {l: i for i, l in enumerate(self._lang)}
 
     def read_embedding(self, dim, pre_emb=None):
         if pre_emb:
@@ -53,29 +55,33 @@ class Vocab(object):
     @staticmethod
     def collect(corpus):
         token, edge = [], []
-        for passage in corpus.passages:
-            for node in passage.layer("0").all:
-                token.append(node.text)
-            for node in passage.layer("1").all:
-                for e in node._incoming:
-                    if e.attrib.get("remote"):
-                        edge.append(e.tag)
+        language = []
+        for c in corpus:
+            language.append(c.lang)
+            for passage in c.passages:
+                for node in passage.layer("0").all:
+                    token.append(node.text)
+                for node in passage.layer("1").all:
+                    for e in node._incoming:
+                        if e.attrib.get("remote"):
+                            edge.append(e.tag)
         # word_count = Counter(token)
         words, edge_label = sorted(set(token)), sorted(set(edge))
 
         parse_label = []
-        for instance in corpus.instances:
-            instance.tree = instance.tree.convert()
-            nodes = [instance.tree]
-            while nodes:
-                node = nodes.pop()
-                if isinstance(node, InternalParseNode):
-                    parse_label.append(node.label)
-                    nodes.extend(reversed(node.children))
+        for c in corpus:
+            for instance in c.instances:
+                instance.tree = instance.tree.convert()
+                nodes = [instance.tree]
+                while nodes:
+                    node = nodes.pop()
+                    if isinstance(node, InternalParseNode):
+                        parse_label.append(node.label)
+                        nodes.extend(reversed(node.children))
         parse_label = sorted(set(parse_label))
 
         chars = sorted(set(''.join(words)))
-        return chars, words, edge_label, parse_label
+        return chars, words, edge_label, parse_label, language
 
     @property
     def PAD_index(self):
@@ -109,6 +115,9 @@ class Vocab(object):
     def num_parse_label(self):
         return len(self._parse_label)
 
+    @property
+    def num_lang(self):
+        return len(self._lang)
 
     def save(self, filename):
         with open(filename, "wb") as f:
@@ -121,11 +130,12 @@ class Vocab(object):
         return obj
 
     def __repr__(self):
-        return "word:%d, char:%d, edge_label:%d, parse_label:%d" % (
+        return "word:%d, char:%d, edge_label:%d, parse_label:%d, language:%d" % (
             self.num_word,
             self.num_char,
             self.num_edge_label,
             self.num_parse_label,
+            self.num_lang,
         )
 
     def word2id(self, word):
@@ -159,3 +169,6 @@ class Vocab(object):
 
     def parse_label2id(self, label):
         return self._parse_label2id[label]
+
+    def lang2id(self, lang):
+        return self._lang2id[lang]

@@ -33,15 +33,17 @@ class Trainer(object):
         self.optimizer.zero_grad()
         self.parser.zero_grad()
         span_losses, remote_losses = 0, 0
-        word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
+        lang_idxs, word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         batch_size = len(word_idxs)
+        lang_idxs = torch.split(lang_idxs, 5, dim=0)
         word_idxs = torch.split(word_idxs, 5, dim=0)
         char_idxs = torch.split(char_idxs, 5, dim=0)
-        for i, word_idx, char_idx in zip(range(0, batch_size, 5), word_idxs, char_idxs):
+        for i, lang_idx, word_idx, char_idx in zip(range(0, batch_size, 5), lang_idxs, word_idxs, char_idxs):
             if torch.cuda.is_available():
                 span_loss, remote_loss = self.parser.parse(
+                    lang_idx.cuda(),
                     word_idx.cuda(),
                     char_idx.cuda(),
                     passages[i : i + 5],
@@ -51,6 +53,7 @@ class Trainer(object):
                 )
             else:
                 span_loss, remote_loss = self.parser.parse(
+                    lang_idx,
                     word_idx,
                     char_idx,
                     passages[i : i + 5],

@@ -5,6 +5,7 @@
         "encoder": "lstm",
         "partition": true,
         
+        "lang_dim": 50,
         "word_dim": 300, 
         "char_dim": 50, 
         "position_dim": 300, 

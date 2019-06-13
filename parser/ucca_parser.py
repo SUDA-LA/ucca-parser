@@ -21,7 +21,7 @@ class UCCA_Parser(torch.nn.Module):
         if args.encoder == "lstm":
             self.shared_encoder = LSTM_Encoder(
                 vocab=vocab,
-                ext_emb=pre_emb,
+                lang_dim=args.lang_dim,
                 word_dim=args.word_dim,
                 char_dim=args.char_dim,
                 charlstm_dim=args.charlstm_dim,
@@ -85,8 +85,8 @@ class UCCA_Parser(torch.nn.Module):
             mlp_label_dim=args.mlp_label_dim,
         )
 
-    def parse(self, word_idxs, char_idxs, passages, trees=None, all_nodes=None, all_remote=None):
-        spans, sen_lens = self.shared_encoder(word_idxs, char_idxs)
+    def parse(self, lang_idxs, word_idxs, char_idxs, passages, trees=None, all_nodes=None, all_remote=None):
+        spans, sen_lens = self.shared_encoder(lang_idxs, word_idxs, char_idxs)
 
         if self.training:
             span_loss = self.span_parser.get_loss(spans, sen_lens, trees)

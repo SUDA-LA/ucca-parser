@@ -21,13 +21,21 @@ from parser.utils import (
 class Train(object):
     def add_subparser(self, name, parser):
         subparser = parser.add_parser(name, help="Train a model.")
-        subparser.add_argument("--train_path", required=True, help="train data dir")
-        subparser.add_argument("--dev_path", required=True, help="dev data dir")
-        subparser.add_argument("--emb_path", help="pretrained embedding path", default="")
+        subparser.add_argument("--en_train_path", required=True, help="en train data dir")
+        subparser.add_argument("--fr_train_path", required=True, help="fr train data dir")
+        subparser.add_argument("--de_train_path", required=True, help="de train data dir")
+
+        subparser.add_argument("--en_dev_path", required=True, help="en dev data dir")
+        subparser.add_argument("--fr_dev_path", required=True, help="fr dev data dir")
+        subparser.add_argument("--de_dev_path", required=True, help="de dev data dir")
+
         subparser.add_argument("--save_path", required=True, help="dic to save all file")
         subparser.add_argument("--config_path", required=True, help="init config file")
-        subparser.add_argument("--test_wiki_path", help="wiki test data dir", default="")
-        subparser.add_argument("--test_20k_path", help="20k data dir", default="")
+
+        subparser.add_argument("--en_test_wiki_path", help="en wiki test data dir", default="")
+        subparser.add_argument("--en_test_20k_path", help="en 20k data dir", default="")
+        subparser.add_argument("--fr_test_20k_path", help="fr 20k data dir", default="")
+        subparser.add_argument("--de_test_20k_path", help="de 20k data dir", default="")
         subparser.set_defaults(func=self)
 
         return subparser
@@ -35,7 +43,7 @@ class Train(object):
     def __call__(self, args):
         config = get_config(args.config_path)
         assert config.ucca.type in ["chart", "top-down", "global-chart"]
-        assert config.ucca.encoder in ["lstm", "attention"]
+        assert config.ucca.encoder in ["lstm"]
         assert config.ucca.partition in [True, False]
 
         with open(os.path.join(args.save_path, "config.json"), "w", encoding="utf-8") as f:
@@ -44,45 +52,42 @@ class Train(object):
         print("save all files to %s" % (args.save_path))
         # read training , dev file
         print("loading datasets and transforming to trees...")
-        train = Corpus(args.train_path)
-        dev = Corpus(args.dev_path)
-        print(train, "\n", dev)
+        en_train = Corpus(args.en_train_path, "en")
+        fr_train = Corpus(args.fr_train_path, "fr")
+        de_train = Corpus(args.de_train_path, "de")
+        print(en_train, "\n", fr_train, "\n", de_train)
+
+        en_dev = Corpus(args.en_dev_path, "en")
+        fr_dev = Corpus(args.fr_dev_path, "fr")
+        de_dev = Corpus(args.de_dev_path, "de")
+        print(en_dev, "\n", fr_dev, "\n", de_dev)
 
         # init vocab
         print("collecting words and labels in training dataset...")
-        vocab = Vocab(train)
+        vocab = Vocab((en_train, fr_train, de_train))
         print(vocab)
 
-        # prepare pre-trained embedding
-        if args.emb_path:
-            print("reading pre-trained embedding...")
-            pre_emb = Embedding.load(args.emb_path)
-            print(
-                "pre-trained words:%d, dim=%d in %s"
-                % (len(pre_emb), pre_emb.dim, args.emb_path)
-            )
-        else:
-            pre_emb = None
-        embedding = vocab.read_embedding(config.ucca.word_dim, pre_emb)
         vocab_path = os.path.join(args.save_path, "vocab.pt")
         torch.save(vocab, vocab_path)
 
         # init parser
         print("initializing model...")
-        ucca_parser = UCCA_Parser(vocab, config.ucca, pre_emb=embedding)
+        ucca_parser = UCCA_Parser(vocab, config.ucca)
         if torch.cuda.is_available():
             ucca_parser = ucca_parser.cuda()
 
         # prepare data
+        train_dataset = Data.ConcatDataset([en_train.generate_inputs(vocab, True), fr_train.generate_inputs(vocab, True), de_train.generate_inputs(vocab, True)])
+        dev_dataset = Data.ConcatDataset([en_dev.generate_inputs(vocab, False), fr_dev.generate_inputs(vocab, False), de_dev.generate_inputs(vocab, False)])
         print("preparing input data...")
         train_loader = Data.DataLoader(
-            dataset=train.generate_inputs(vocab, True),
+            dataset=train_dataset,
             batch_size=config.ucca.batch_size,
             shuffle=True,
             collate_fn=collate_fn,
         )
         dev_loader = Data.DataLoader(
-            dataset=dev.generate_inputs(vocab, False),
+            dataset=dev_dataset,
             batch_size=10,
             shuffle=False,
             collate_fn=collate_fn,
@@ -91,7 +96,7 @@ class Train(object):
         optimizer = optim.Adam(ucca_parser.parameters(), lr=config.ucca.lr)
         ucca_evaluator = UCCA_Evaluator(
             parser=ucca_parser,
-            gold_dic=args.dev_path,
+            gold_dic=[args.en_dev_path, args.fr_dev_path, args.de_dev_path]
         )
 
         trainer = Trainer(
@@ -114,9 +119,9 @@ class Train(object):
         config_path = os.path.join(args.save_path, "config.json")
         ucca_parser = UCCA_Parser.load(vocab_path, config_path, state_path)
 
-        if args.test_wiki_path:
-            print("evaluating test data : %s" % (args.test_wiki_path))
-            test = Corpus(args.test_wiki_path)
+        if args.en_test_wiki_path:
+            print("evaluating en wiki test data : %s" % (args.en_test_wiki_path))
+            test = Corpus(args.en_test_wiki_path)
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
@@ -126,14 +131,14 @@ class Train(object):
             )
             ucca_evaluator = UCCA_Evaluator(
                 parser=ucca_parser,
-                gold_dic=args.test_wiki_path,
+                gold_dic=[args.en_test_wiki_path],
             )
             ucca_evaluator.compute_accuracy(test_loader)
             ucca_evaluator.remove_temp()
 
-        if args.test_20k_path:
-            print("evaluating test data : %s" % (args.test_20k_path))
-            test = Corpus(args.test_20k_path)
+        if args.en_test_20k_path:
+            print("evaluating en 20K test data : %s" % (args.en_test_20k_path))
+            test = Corpus(args.en_test_20k_path)
             print(test)
             test_loader = Data.DataLoader(
                 dataset=test.generate_inputs(vocab, False),
@@ -143,7 +148,41 @@ class Train(object):
             )
             ucca_evaluator = UCCA_Evaluator(
                 parser=ucca_parser,
-                gold_dic=args.test_20k_path,
+                gold_dic=[args.en_test_20k_path],
+            )
+            ucca_evaluator.compute_accuracy(test_loader)
+            ucca_evaluator.remove_temp()
+        
+        if args.fr_test_20k_path:
+            print("evaluating fr 20K test data : %s" % (args.fr_test_20k_path))
+            test = Corpus(args.fr_test_20k_path)
+            print(test)
+            test_loader = Data.DataLoader(
+                dataset=test.generate_inputs(vocab, False),
+                batch_size=10,
+                shuffle=False,
+                collate_fn=collate_fn,
+            )
+            ucca_evaluator = UCCA_Evaluator(
+                parser=ucca_parser,
+                gold_dic=[args.fr_test_20k_path],
+            )
+            ucca_evaluator.compute_accuracy(test_loader)
+            ucca_evaluator.remove_temp()
+
+        if args.de_test_20k_path:
+            print("evaluating de 20K test data : %s" % (args.de_test_20k_path))
+            test = Corpus(args.de_test_20k_path)
+            print(test)
+            test_loader = Data.DataLoader(
+                dataset=test.generate_inputs(vocab, False),
+                batch_size=10,
+                shuffle=False,
+                collate_fn=collate_fn,
+            )
+            ucca_evaluator = UCCA_Evaluator(
+                parser=ucca_parser,
+                gold_dic=[args.de_test_20k_path],
             )
             ucca_evaluator.compute_accuracy(test_loader)
             ucca_evaluator.remove_temp()

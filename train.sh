@@ -1,14 +1,23 @@
 #!/bin/bash
 
-train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_English-Wiki
-dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
-emb_path=/data/wjiang/data/embedding/cc.en.300.vec
-save_path=./exp/baseline/debug
-config_path=./config.json
-test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
-test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-20K
+en_train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_English-Wiki
+fr_train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_French-20K
+de_train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_German-20K
 
-gpu=7
+en_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
+fr_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_French-20K
+de_dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_German-20K
+
+save_path=./exp/multilingual/debug
+config_path=./config.json
+
+en_test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
+en_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-20K
+fr_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_French-20K
+de_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_German-20K
+
+
+gpu=6
 
 if [ ! -d "$save_path" ]; then
     mkdir "$save_path"
@@ -17,9 +26,14 @@ fi
 python -u run.py train\
     --gpu=$gpu \
     --save_path=$save_path \
-    --train_path=$train_path \
-    --test_wiki_path=$test_wiki_path \
-    --test_20k_path=$test_20k_path \
-    --dev_path=$dev_path \
-    --emb_path=$emb_path \
+    --en_train_path=$en_train_path \
+    --fr_train_path=$fr_train_path \
+    --de_train_path=$de_train_path \
+    --en_dev_path=$en_dev_path \
+    --fr_dev_path=$fr_dev_path \
+    --de_dev_path=$de_dev_path \
+    --en_test_wiki_path=$en_test_wiki_path \
+    --en_test_20k_path=$en_test_20k_path \
+    --fr_test_20k_path=$fr_test_20k_path \
+    --de_test_20k_path=$de_test_20k_path \
     --config_path=$config_path
