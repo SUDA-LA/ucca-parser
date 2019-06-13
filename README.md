@@ -26,8 +26,8 @@ Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
-| English-Topdown-CharLSTM | 79.5        | 43.8       | **79.0**    | 77.6              | 48.0             | **77.2**          | 73.3                | 19.0            | **72.3**         |
-| German-Topdown-CharLSTM  | 82.9        | 51.4       | 82.3        | 83.5              | 57.6             | 83.0              | /                   | /               | /                |
+| English-Topdown-CharLSTM | 79.5        | 43.8       | 79.0        | 77.6              | 48.0             | 77.2              | 73.3                | 19.0            | 72.3             |
+| German-Topdown-CharLSTM  | 83.0        | 53.2       | 82.4        | /                 | /                | /                 | 83.6                | 56.5            | 83.1             |
 
 ## Usage
 
