@@ -33,17 +33,23 @@ class Trainer(object):
         self.optimizer.zero_grad()
         self.parser.zero_grad()
         span_losses, remote_losses = 0, 0
-        word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
+        word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         batch_size = len(word_idxs)
         word_idxs = torch.split(word_idxs, 5, dim=0)
-        char_idxs = torch.split(char_idxs, 5, dim=0)
-        for i, word_idx, char_idx in zip(range(0, batch_size, 5), word_idxs, char_idxs):
+        pos_idxs = torch.split(pos_idxs, 5, dim=0)
+        dep_idxs = torch.split(dep_idxs, 5, dim=0)
+        ent_idxs = torch.split(ent_idxs, 5, dim=0)
+        ent_iob_idxs = torch.split(ent_iob_idxs, 5, dim=0)
+        for i, word_idx, pos_idx, dep_idx, ent_idx, ent_iob_idx in zip(range(0, batch_size, 5), word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs):
             if torch.cuda.is_available():
                 span_loss, remote_loss = self.parser.parse(
                     word_idx.cuda(),
-                    char_idx.cuda(),
+                    pos_idx.cuda(),
+                    dep_idx.cuda(),
+                    ent_idx.cuda(),
+                    ent_iob_idx.cuda(),
                     passages[i : i + 5],
                     trees[i : i + 5],
                     all_nodes[i : i + 5],
@@ -52,7 +58,10 @@ class Trainer(object):
             else:
                 span_loss, remote_loss = self.parser.parse(
                     word_idx,
-                    char_idx,
+                    pos_idx,
+                    dep_idx,
+                    ent_idx,
+                    ent_iob_idx,
                     passages[i : i + 5],
                     trees[i : i + 5],
                     all_nodes[i : i + 5],
@@ -62,8 +71,7 @@ class Trainer(object):
             remote_losses += sum(remote_loss)
         loss = span_losses / batch_size + remote_losses
         loss.backward()
-        if self.parser.encoder == "attention" or self.parser.type == "chart":
-            nn.utils.clip_grad_norm_(self.parser.parameters(), 5.0)
+        nn.utils.clip_grad_norm_(self.parser.parameters(), 5.0)
         self.optimizer.step()
         return loss
 

@@ -2,27 +2,17 @@
     "ucca":
     {
         "type": "top-down", 
-        "encoder": "lstm",
-        "partition": true,
         
         "word_dim": 300, 
-        "char_dim": 50, 
-        "position_dim": 300, 
-        "charlstm_dim": 100, 
+        "pos_dim": 50,
+        "dep_dim": 50,
+        "ent_dim": 25,
+        "ent_iob_dim": 25,
+        
         "lstm_layer": 2, 
         "lstm_dim": 400, 
         "lstm_drop": 0.4, 
         "emb_drop": 0.5, 
-        "char_drop": 0.5,
-
-        "d_model": 600, 
-        "d_k": 64, 
-        "d_v": 64, 
-        "n_head": 8, 
-        "attn_layer": 6, 
-        "max_seq_len": 300, 
-        "d_inner": 1200, 
-        "n_warmup_steps": 42, 
         
         "label_hidden": 200, 
         "split_hidden": 200, 

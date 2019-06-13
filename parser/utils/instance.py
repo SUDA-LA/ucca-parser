@@ -10,12 +10,15 @@ class Instance(object):
         self.passage = passage
 
         terminals = [
-            (node.text, node.extra["pos"])
+            (node.text, node.extra["pos"], node.extra["dep"], node.extra["ent_type"], node.extra["ent_iob"])
             for node in sorted(passage.layer("0").all, key=lambda x: x.position)
         ]
-        words, pos = zip(*terminals)
+        words, pos, dep, ent_type, ent_iob = zip(*terminals)
         self.words = list(words)
         self.pos = list(pos)
+        self.dep = list(dep)
+        self.ent = list(ent_type)
+        self.ent_iob = list(ent_iob)
         self.tree = self.generate_tree()
         self.remote = self.gerenate_remote()
 
