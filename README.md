@@ -2,7 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-For simplicity, this version of the implementation does not use any extra feature in the corpus, except pre-trained embeddings. We use Char-LSTM in place of embeddings of POS, dependency labels and entity labels, resulting in about 0.4% drop on the results of test data. 
+For simplicity, this version of the implementation does not use any extra feature in the corpus, except pre-trained embeddings. We use Char-LSTM in place of embeddings of POS, dependency labels and entity labels, resulting in about 0.4% drop on the results of english test data. 
 
 Other model choices such as using chart decoding or using self-attentive encoder are also included in this version. You can choose in config.json.
 
@@ -23,10 +23,11 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
+Here are the results I re-run on June 13, 2019. The results on english 20k test is the most unstable.
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
-| English-Topdown-CharLSTM | 79.5        | 43.8       | 79.0        | 77.6              | 48.0             | 77.2              | 73.3                | 19.0            | 72.3             |
+| English-Topdown-CharLSTM | 79.4        | 50.3       | 78.9        | 77.6              | 50.1             | 77.1              | 73.0                | 25.6            | 72.0             |
 | German-Topdown-CharLSTM  | 83.0        | 53.2       | 82.4        | /                 | /                | /                 | 83.6                | 56.5            | 83.1             |
 
 ## Usage
