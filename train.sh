@@ -8,7 +8,7 @@ config_path=./config.json
 test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
 test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-20K
 
-gpu=7
+gpu=5
 
 if [ ! -d "$save_path" ]; then
     mkdir "$save_path"
