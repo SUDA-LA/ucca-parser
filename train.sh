@@ -3,7 +3,7 @@
 train_path=/data/wjiang/UCCA/train-dev-data/train-xml/UCCA_English-Wiki
 dev_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_English-Wiki
 emb_path=/data/wjiang/data/embedding/cc.en.300.vec
-save_path=./exp/lexical/debug
+save_path=./exp/lexical/english
 config_path=./config.json
 test_wiki_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-Wiki
 test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_English-20K

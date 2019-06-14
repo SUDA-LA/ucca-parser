@@ -21,11 +21,12 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
+Here are the results I re-run on June 13, 2019, which are almost the same with the results in paper.
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
-| English-Topdown-Lexical | 79.5        | 43.8       | 79.0        | 77.6              | 48.0             | 77.2              | 73.3                | 19.0            | 72.3             |
-| German-Topdown-Lexical  | 83.0        | 53.2       | 82.4        | /                 | /                | /                 | 83.6                | 56.5            | 83.1             |
+| English-Topdown-Lexical | 79.7        | 52.2       | 79.2        | 77.9              | 48.0             | 77.4              | 74.0                | 23.4            | 73.0             |
+| German-Topdown-Lexical  | 82.9        | 57.1       | 82.4        | /                 | /                | /                 | 83.5                | 61.1            | 83.0             |
 
 ## Usage
 
