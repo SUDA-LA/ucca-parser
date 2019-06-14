@@ -49,10 +49,7 @@ class LSTM_Encoder(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        init.normal_(self.pos_embedding.weight)
-        init.normal_(self.dep_embedding.weight)
-        init.normal_(self.ent_embedding.weight)
-        init.normal_(self.ent_iob_embedding.weight)
+        self.word_embedding.weight.data.zero_()
 
     def forward(self, lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs):
         mask = word_idxs.ne(self.vocab.PAD_index)
