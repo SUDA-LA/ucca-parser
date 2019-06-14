@@ -4,6 +4,8 @@ An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Co
 
 This version of the implementation uses lexical features in the corpus, including POS tags, dependency labels and entity labels, just as described in the paper.
 
+For other models or versions, please see different branches.
+
 ## Requirements
 
 ```txt
