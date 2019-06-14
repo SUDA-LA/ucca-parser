@@ -22,6 +22,14 @@ Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
 
+Here are the results on French dataset I re-run on June 14, 2019. Note that the paper does not provide the results on test data(without bert).
+
+| description          | dev primary | dev remote | dev average | test 20K    primary | test 20K remote | test 20K average |
+| -------------------- | ----------- | ---------- | ----------- | ------------------- | --------------- | ---------------- |
+| multilingual-lexical | 69.7        | 20.2       | 68.9        | 67.6                | 22.3            | 66.7             |
+
+
+
 
 ## Usage
 
@@ -49,26 +57,42 @@ Note that the path to save the model is a directory. After training, there are t
 
 ```sh
 $ python run.py train -h
-usage: run.py train [-h] --train_path TRAIN_PATH --dev_path DEV_PATH
-                    [--emb_path EMB_PATH] --save_path SAVE_PATH --config_path
-                    CONFIG_PATH [--test_wiki_path TEST_WIKI_PATH]
-                    [--test_20k_path TEST_20K_PATH] [--gpu GPU] [--seed SEED]
-                    [--threads THREADS]
+usage: run.py train [-h] --en_train_path EN_TRAIN_PATH --fr_train_path
+                    FR_TRAIN_PATH --de_train_path DE_TRAIN_PATH --en_dev_path
+                    EN_DEV_PATH --fr_dev_path FR_DEV_PATH --de_dev_path
+                    DE_DEV_PATH --save_path SAVE_PATH --config_path
+                    CONFIG_PATH [--en_test_wiki_path EN_TEST_WIKI_PATH]
+                    [--en_test_20k_path EN_TEST_20K_PATH]
+                    [--fr_test_20k_path FR_TEST_20K_PATH]
+                    [--de_test_20k_path DE_TEST_20K_PATH] [--gpu GPU]
+                    [--seed SEED] [--threads THREADS]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --train_path TRAIN_PATH
-                        train data dir
-  --dev_path DEV_PATH   dev data dir
-  --emb_path EMB_PATH   pretrained embedding path
+  --en_train_path EN_TRAIN_PATH
+                        en train data dir
+  --fr_train_path FR_TRAIN_PATH
+                        fr train data dir
+  --de_train_path DE_TRAIN_PATH
+                        de train data dir
+  --en_dev_path EN_DEV_PATH
+                        en dev data dir
+  --fr_dev_path FR_DEV_PATH
+                        fr dev data dir
+  --de_dev_path DE_DEV_PATH
+                        de dev data dir
   --save_path SAVE_PATH
                         dic to save all file
   --config_path CONFIG_PATH
-                        dic to save all file
-  --test_wiki_path TEST_WIKI_PATH
-                        wiki test data dir
-  --test_20k_path TEST_20K_PATH
-                        20k data dir
+                        init config file
+  --en_test_wiki_path EN_TEST_WIKI_PATH
+                        en wiki test data dir
+  --en_test_20k_path EN_TEST_20K_PATH
+                        en 20k data dir
+  --fr_test_20k_path FR_TEST_20K_PATH
+                        fr 20k data dir
+  --de_test_20k_path DE_TEST_20K_PATH
+                        de 20k data dir
   --gpu GPU             gpu id
   --seed SEED           random seed
   --threads THREADS     thread num
@@ -76,8 +100,8 @@ optional arguments:
 
 $ python run.py evaluate -h
 usage: run.py evaluate [-h] --gold_path GOLD_PATH --save_path SAVE_PATH
-                       [--batch_size BATCH_SIZE] [--gpu GPU] [--seed SEED]
-                       [--threads THREADS]
+                       [--batch_size BATCH_SIZE] [--language {en,fr,de}]
+                       [--gpu GPU] [--seed SEED] [--threads THREADS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -87,6 +111,8 @@ optional arguments:
                         path to save the model
   --batch_size BATCH_SIZE
                         batch size
+  --language {en,fr,de}
+                        language
   --gpu GPU             gpu id
   --seed SEED           random seed
   --threads THREADS     thread num
@@ -95,7 +121,8 @@ optional arguments:
 $ python run.py predict -h
 usage: run.py predict [-h] --test_path TEST_PATH --save_path SAVE_PATH
                       --pred_path PRED_PATH [--batch_size BATCH_SIZE]
-                      [--gpu GPU] [--seed SEED] [--threads THREADS]
+                      [--language {en,fr,de}] [--gpu GPU] [--seed SEED]
+                      [--threads THREADS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -107,6 +134,8 @@ optional arguments:
                         save predict passages
   --batch_size BATCH_SIZE
                         batch size
+  --language {en,fr,de}
+                        language
   --gpu GPU             gpu id
   --seed SEED           random seed
   --threads THREADS     thread num
