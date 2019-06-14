@@ -16,13 +16,17 @@ def write_test(parser, test, path):
 
     test_predicted = []
     for batch in test:
-        word_idxs, char_idxs, passages, trees, all_nodes, all_remote = (
+        lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         if torch.cuda.is_available():
+            lang_idxs = lang_idxs.cuda()
             word_idxs = word_idxs.cuda()
-            char_idxs = char_idxs.cuda()
-        pred_passages = parser.parse(word_idxs, char_idxs, passages)
+            pos_idxs = pos_idxs.cuda()
+            dep_idxs = dep_idxs.cuda()
+            ent_idxs = ent_idxs.cuda()
+            ent_iob_idxs = ent_iob_idxs.cuda()
+        pred_passages = parser.parse(lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
         test_predicted.extend(pred_passages)
 
     if not os.path.exists(path):
@@ -45,6 +49,7 @@ class Predict(object):
         subparser.add_argument("--save_path", required=True, help="path to save the model")
         subparser.add_argument("--pred_path", required=True, help="save predict passages")
         subparser.add_argument("--batch_size", type=int, default=10, help="batch size")
+        subparser.add_argument("--language", default="fr", choices=["en", "fr", "de"], help="language")
         subparser.set_defaults(func=self)
 
         return subparser
@@ -52,7 +57,7 @@ class Predict(object):
     def __call__(self, args):
         # read test
         print("loading datasets...")
-        test = Corpus(args.test_path)
+        test = Corpus(args.test_path, args.language)
         print(test)
 
         # reload parser

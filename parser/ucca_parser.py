@@ -86,6 +86,7 @@ class UCCA_Parser(torch.nn.Module):
         vocab = torch.load(vocab_path)
         config = get_config(config_path)
 
+        network = cls(vocab, config.ucca)
         network.load_state_dict(state)
         network.to(device)
 

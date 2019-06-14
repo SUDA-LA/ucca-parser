@@ -18,6 +18,7 @@ class Evaluate(object):
         subparser.add_argument("--gold_path", required=True, help="gold test data dir")
         subparser.add_argument("--save_path", required=True, help="path to save the model")
         subparser.add_argument("--batch_size", type=int, default=10, help="batch size")
+        subparser.add_argument("--language", default="fr", choices=["en", "fr", "de"], help="language")
         subparser.set_defaults(func=self)
 
         return subparser
@@ -25,7 +26,7 @@ class Evaluate(object):
     def __call__(self, args):
         # read test
         print("loading datasets...")
-        test = Corpus(args.gold_path)
+        test = Corpus(args.gold_path, args.language)
         print(test)
 
         # reload parser
@@ -44,7 +45,7 @@ class Evaluate(object):
         print("evaluating test data : %s" % (args.gold_path))
         ucca_evaluator = UCCA_Evaluator(
             parser=ucca_parser,
-            gold_dic=args.gold_path,
+            gold_dic=[args.gold_path],
         )
         ucca_evaluator.compute_accuracy(test_loader)
         ucca_evaluator.remove_temp()
