@@ -1,0 +1,28 @@
+{
+    "ucca":
+    {
+        "type": "top-down", 
+        
+        "word_dim": 300, 
+        "pos_dim": 50,
+        "dep_dim": 50,
+        "ent_dim": 25,
+        "ent_iob_dim": 25,
+        
+        "lstm_layer": 2, 
+        "lstm_dim": 400, 
+        "lstm_drop": 0.4, 
+        "emb_drop": 0.5, 
+        
+        "label_hidden": 200, 
+        "split_hidden": 200, 
+        "ffn_drop": 0.2, 
+        "mlp_label_dim": 100,
+
+        "batch_size": 10, 
+        "epoch": 100, 
+        "patience": 10, 
+        "lr": 0.001,
+        "optimizer": "adam"
+    }
+}

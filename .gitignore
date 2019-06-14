@@ -1,0 +1,13 @@
+.idea
+.DS_Store
+*.pyc
+*.pkl
+.vscode
+*.db
+*conll
+*-hwc
+*.pt
+./train
+*.xml
+./exp
+./experiment
