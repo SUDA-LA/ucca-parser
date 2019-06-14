@@ -33,10 +33,10 @@ class UCCA_Parser(torch.nn.Module):
         if args.type == "chart":
             self.span_parser = Chart_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim,
                 label_hidden_dim=args.label_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False,
             )
         elif args.type == "top-down":
             self.span_parser = Topdown_Span_Parser(
