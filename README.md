@@ -2,7 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-This version of the implementation uses lexical features in the corpus, including POS tags, dependency labels, entity labels. 
+This version of the implementation uses lexical features in the corpus, including POS tags, dependency labels and entity labels, just as described in the paper.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
-Here are the results I re-run on June 13, 2019, which are almost the same with the results in paper.
+Here are the results I re-run on June 13, 2019, which are almost the same with the results in the paper.
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
