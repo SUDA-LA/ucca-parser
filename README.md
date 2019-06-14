@@ -123,9 +123,3 @@ optional arguments:
 ## Convertion
 
 Convertion codes are included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery codes are included in `parser.submodel.remote_parser.py` independently.
-
-## TODO
-
-1、Add the multilingual model codes
-
-2、Add the models using embeddings of POS tags, dependency labels and named entities.
