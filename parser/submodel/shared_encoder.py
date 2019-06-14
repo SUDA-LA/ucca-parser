@@ -32,10 +32,10 @@ class LSTM_Encoder(nn.Module):
         self.lang_embedding = nn.Embedding(vocab.num_lang, lang_dim)
         self.word_embedding = nn.Embedding(vocab.num_word, word_dim, padding_idx=0)
 
-        self.pos_embedding = nn.Embedding(vocab.num_pos, pos_dim)
-        self.dep_embedding = nn.Embedding(vocab.num_dep, dep_dim)
-        self.ent_embedding = nn.Embedding(vocab.num_ent, ent_dim)
-        self.ent_iob_embedding = nn.Embedding(vocab.num_ent_iob, ent_iob_dim)
+        self.pos_embedding = nn.Embedding(vocab.num_pos, pos_dim, padding_idx=0)
+        self.dep_embedding = nn.Embedding(vocab.num_dep, dep_dim, padding_idx=0)
+        self.ent_embedding = nn.Embedding(vocab.num_ent, ent_dim, padding_idx=0)
+        self.ent_iob_embedding = nn.Embedding(vocab.num_ent_iob, ent_iob_dim, padding_idx=0)
 
         self.lstm = nn.LSTM(
             input_size=word_dim + pos_dim + dep_dim + ent_dim + ent_iob_dim + lang_dim,
