@@ -22,7 +22,7 @@ Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
 
-Here are the results on French dataset I re-run on June 14, 2019. Note that the paper does not provide the results on test data(without bert).
+Here are the results on French dataset I re-ran on June 14, 2019. Note that the paper does not provide the results on test data(without bert).
 
 | description          | dev primary | dev remote | dev average | test 20K    primary | test 20K remote | test 20K average |
 | -------------------- | ----------- | ---------- | ----------- | ------------------- | --------------- | ---------------- |
@@ -53,7 +53,7 @@ Commands:
 
 Optional arguments of the subparsers are as follows:
 
-Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json"、"vocab.pt" and "parser.pt".
+Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json", "vocab.pt" and "parser.pt".
 
 ```sh
 $ python run.py train -h
@@ -142,6 +142,6 @@ optional arguments:
 
 ```
 
-## Convertion
+## Conversion
 
-Convertion codes are included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery codes are included in `parser.submodel.remote_parser.py` independently.
+Conversion code is included in `parser.convert`.  The function `UCCA2tree` is used to convert a UCCA passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery code is included in `parser.submodel.remote_parser.py` independently.
