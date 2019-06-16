@@ -23,7 +23,7 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
 ## Performance
-Here are the results I re-run on June 13, 2019, which are almost the same with the results in the paper.
+Here are the results I re-ran on June 13, 2019, which are almost the same as the results in the paper.
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
@@ -52,7 +52,7 @@ Commands:
 
 Optional arguments of the subparsers are as follows:
 
-Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json"、"vocab.pt" and "parser.pt".
+Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json", "vocab.pt" and "parser.pt".
 
 ```sh
 $ python run.py train -h
@@ -120,6 +120,6 @@ optional arguments:
 
 ```
 
-## Convertion
+## Conversion
 
-Convertion codes are included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery codes are included in `parser.submodel.remote_parser.py` independently.
+Conversion code is included in `parser.convert`.  The function `UCCA2tree` is used to convert a UCCA passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edge recovery code is included in `parser.submodel.remote_parser.py` independently.
