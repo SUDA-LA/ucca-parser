@@ -2,7 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-This version of the implementation use lexical features in the corpus, including POS tags, dependency labels, entity labels. This model is trained on three corpus from different languages, with a language embedding concatenated before the word embedding.
+This version of the implementation use lexical features in the corpus and bert features.
 
 ## Requirements
 
@@ -10,6 +10,7 @@ This version of the implementation use lexical features in the corpus, including
 python >= 3.6.0
 pytorch == 1.0.0
 ucca == 1.0.127
+pytorch_pretrained_bert == 0.6.2
 ```
 
 Note that the code has not been tested on the newest version of ucca module.
@@ -20,13 +21,15 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
+Pre-trained bert model: This version uses base-multilingual-cased bert from pytorch_pretrained_bert. To run the code, please download parameter and vocab files from https://github.com/huggingface/pytorch-pretrained-BERT.
+
 ## Performance
 
-Here are the results on French dataset I re-run on June 14, 2019. Note that the paper does not provide the results on test data(without bert).
+Here are the results on French dataset I re-run on June 28, 2019.
 
 | description          | dev primary | dev remote | dev average | test 20K    primary | test 20K remote | test 20K average |
 | -------------------- | ----------- | ---------- | ----------- | ------------------- | --------------- | ---------------- |
-| multilingual-lexical | 69.7        | 20.2       | 68.9        | 67.6                | 22.3            | 66.7             |
+| multilingual-lexical-bert |         |        |         |                 |             |              |
 
 
 
