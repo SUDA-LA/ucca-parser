@@ -1,7 +1,7 @@
 #!/bin/bash
 
 gold_path=/data/wjiang/UCCA/train-dev-data/dev-xml/UCCA_French-20K
-save_path=./exp/multilingual-lexical/french/
+save_path=./exp/multilingual-lexical-bert/french/
 language=fr
 
 gpu=5

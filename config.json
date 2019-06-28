@@ -9,7 +9,12 @@
         "dep_dim": 50,
         "ent_dim": 25,
         "ent_iob_dim": 25,
-        
+
+        "bert_path": "/data/wjiang/data/bert/bert-base-multilingual-cased.tar.gz",
+        "bert_vocab": "/data/wjiang/data/bert/bert-base-multilingual-cased-vocab.txt",
+        "bert_layer":[8, 12],
+        "bert_dim":768,
+
         "lstm_layer": 2, 
         "lstm_dim": 400, 
         "lstm_drop": 0.4, 

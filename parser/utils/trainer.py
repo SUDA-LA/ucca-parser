@@ -33,7 +33,7 @@ class Trainer(object):
         self.optimizer.zero_grad()
         self.parser.zero_grad()
         span_losses, remote_losses = 0, 0
-        lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
+        subword_idxs, subword_masks, token_starts_masks, lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         batch_size = len(word_idxs)
@@ -42,10 +42,16 @@ class Trainer(object):
         pos_idxs = torch.split(pos_idxs, 5, dim=0)
         dep_idxs = torch.split(dep_idxs, 5, dim=0)
         ent_idxs = torch.split(ent_idxs, 5, dim=0)
+        subword_idxs = torch.split(subword_idxs, 5, dim=0)
+        subword_masks = torch.split(subword_masks, 5, dim=0)
+        token_starts_masks = torch.split(token_starts_masks, 5, dim=0)
         ent_iob_idxs = torch.split(ent_iob_idxs, 5, dim=0)
-        for i, lang_idx, word_idx, pos_idx, dep_idx, ent_idx, ent_iob_idx in zip(range(0, batch_size, 5), lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs):
+        for i, lang_idx, word_idx, pos_idx, dep_idx, ent_idx, ent_iob_idx, subword_idx, subword_mask, token_starts_mask, in zip(range(0, batch_size, 5), lang_idxs, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, subword_idxs, subword_masks, token_starts_masks):
             if torch.cuda.is_available():
                 span_loss, remote_loss = self.parser.parse(
+                    subword_idx.cuda(),
+                    subword_mask.cuda(),
+                    token_starts_mask.cuda(),
                     lang_idx.cuda(),
                     word_idx.cuda(),
                     pos_idx.cuda(),
@@ -59,6 +65,9 @@ class Trainer(object):
                 )
             else:
                 span_loss, remote_loss = self.parser.parse(
+                    subword_idx,
+                    subword_mask,
+                    token_starts_mask,
                     lang_idx,
                     word_idx,
                     pos_idx,

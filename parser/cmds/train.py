@@ -62,8 +62,11 @@ class Train(object):
 
         # init vocab
         print("collecting words and labels in training dataset...")
-        vocab = Vocab((en_train, fr_train, de_train))
+        vocab = Vocab(config.ucca.bert_vocab, (en_train, fr_train, de_train))
         print(vocab)
+        en_train.filter(512, vocab)
+        fr_train.filter(512, vocab)
+        de_train.filter(512, vocab)
 
         vocab_path = os.path.join(args.save_path, "vocab.pt")
         torch.save(vocab, vocab_path)
