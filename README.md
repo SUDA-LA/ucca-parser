@@ -2,7 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-This version of the implementation use lexical features in the corpus and bert features.
+This version of the implementation use lexical features in the corpus and BERT features.
 
 ## Requirements
 
@@ -21,15 +21,15 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
-Pre-trained bert model: This version uses base-multilingual-cased bert from pytorch_pretrained_bert. To run the code, please download parameter and vocab files from https://github.com/huggingface/pytorch-pretrained-BERT and modify the paths in config.json.
+Pre-trained bert model: This version uses cased-multilingual-base BERT from [https://github.com/huggingface/pytorch-pretrained-BERT](https://github.com/huggingface/pytorch-pretrained-BERT). To run the code, please download parameter and vocab files first and change paths in the config.json.
 
 ## Performance
 
-Here are the results on French dataset I re-run on June 30, 2019.
+Here are the results on French dataset I re-ran on July 1, 2019.
 
 | description          | dev primary | dev remote | dev average | test 20K    primary | test 20K remote | test 20K average |
 | -------------------- | ----------- | ---------- | ----------- | ------------------- | --------------- | ---------------- |
-| multilingual-lexical-bert |  80.0       | 48.1       |   79.3      |      77.7           |     40.7        |    76.8          |
+| multilingual-lexical-bert |  79.8       | 36.7       |   78.9      |      78.0           |     32.9        |    77.0          |
 
 
 
@@ -56,7 +56,7 @@ Commands:
 
 Optional arguments of the subparsers are as follows:
 
-Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json"、"vocab.pt" and "parser.pt".
+Note that the path to save the model is a directory. After training, there are three files in the directory which are named "config.json", "vocab.pt" and "parser.pt".
 
 ```sh
 $ python run.py train -h
@@ -145,6 +145,6 @@ optional arguments:
 
 ```
 
-## Convertion
+## Conversion
 
-Convertion codes are included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edges recovery codes are included in `parser.submodel.remote_parser.py` independently.
+Conversion code is included in `parser.convert`.  The function `UCCA2tree` is used to convert a ucca passage to a tree. The function `to_UCCA` is used to convert a tree to a UCCA passage. Remote edge recovery code is included in `parser.submodel.remote_parser.py` independently.
