@@ -34,11 +34,28 @@ class Corpus(object):
             passages.append(xml2passage(file_path))
         return passages
 
+    def filter(self, max_len, vocab):
+        passages, instances = [], []
+        for p, i in zip(self.passages, self.instances):
+            if len(vocab.tokenize(i.words)) <= max_len:
+                passages.append(p)
+                instances.append(i)
+            else:
+                print("filter one sentence larger than 512!")
+        self.passages = passages
+        self.instances = instances
+
     def generate_inputs(self, vocab, is_training=False):
+        subword_idxs, subword_masks, token_starts_masks = [], [], []
         word_idxs = []
         pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs = [], [], [], []
         trees, all_nodes, all_remote = [], [], []
         for instance in self.instances:
+            subword_ids, mask, token_starts = vocab.subword_tokenize_to_ids(instance.words)
+            subword_idxs.append(subword_ids)
+            subword_masks.append(mask)
+            token_starts_masks.append(token_starts)
+
             _word_idxs = vocab.word2id([vocab.START] + instance.words + [vocab.STOP])
             _pos_idxs = vocab.pos2id([vocab.START] + instance.pos + [vocab.STOP])
             _dep_idxs = vocab.dep2id([vocab.START] + instance.dep + [vocab.STOP])
@@ -70,6 +87,9 @@ class Corpus(object):
                 all_remote.append([])
 
         return TensorDataSet(
+            subword_idxs,
+            subword_masks,
+            token_starts_masks,
             word_idxs,
             pos_idxs,
             dep_idxs,

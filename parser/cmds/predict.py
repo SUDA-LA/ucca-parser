@@ -16,16 +16,19 @@ def write_test(parser, test, path):
 
     test_predicted = []
     for batch in test:
-        word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
+        subword_idxs, subword_masks, token_starts_masks, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = (
             batch
         )
         if torch.cuda.is_available():
+            subword_idxs = subword_idxs.cuda()
+            subword_masks = subword_masks.cuda()
+            token_starts_masks = token_starts_masks.cuda()
             word_idxs = word_idxs.cuda()
             pos_idxs = pos_idxs.cuda()
             dep_idxs = dep_idxs.cuda()
             ent_idxs = ent_idxs.cuda()
             ent_iob_idxs = ent_iob_idxs.cuda()
-        pred_passages = parser.parse(word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
+        pred_passages = parser.parse(subword_idxs, subword_masks, token_starts_masks, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
         test_predicted.extend(pred_passages)
 
     if not os.path.exists(path):

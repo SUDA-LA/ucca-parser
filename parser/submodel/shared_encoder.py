@@ -8,12 +8,15 @@ from torch.nn.utils.rnn import (
     pad_packed_sequence,
 )
 
-from parser.module import CharLSTM, EncoderLayer, PositionEncoding
+from parser.module import CharLSTM, EncoderLayer, PositionEncoding, Bert_Embedding
 
 
 class LSTM_Encoder(nn.Module):
     def __init__(
         self,
+        bert_path,
+        bert_layer,
+        bert_dim,
         vocab,
         ext_emb,
         word_dim,
@@ -27,6 +30,7 @@ class LSTM_Encoder(nn.Module):
         lstm_drop=0.4,
     ):
         super(LSTM_Encoder, self).__init__()
+        self.bert_encoder = Bert_Embedding(bert_path, bert_layer, bert_dim)
         self.vocab = vocab
         self.ext_word_embedding = nn.Embedding.from_pretrained(ext_emb)
         self.word_embedding = nn.Embedding(vocab.num_train_word, word_dim, padding_idx=0)
@@ -37,7 +41,7 @@ class LSTM_Encoder(nn.Module):
         self.ent_iob_embedding = nn.Embedding(vocab.num_ent_iob, ent_iob_dim)
 
         self.lstm = nn.LSTM(
-            input_size=word_dim + pos_dim + dep_dim + ent_dim + ent_iob_dim,
+            input_size=word_dim + pos_dim + dep_dim + ent_dim + ent_iob_dim + bert_dim,
             hidden_size=lstm_dim // 2,
             bidirectional=True,
             num_layers=lstm_layer,
@@ -50,7 +54,7 @@ class LSTM_Encoder(nn.Module):
     def reset_parameters(self):
         self.word_embedding.weight.data.zero_()
 
-    def forward(self, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs):
+    def forward(self, subword_idxs, subword_masks, token_starts_masks, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs):
         mask = word_idxs.ne(self.vocab.PAD_index)
         sen_lens = mask.sum(1)
         sorted_lens, sorted_idx = torch.sort(sen_lens, dim=0, descending=True)
@@ -72,7 +76,8 @@ class LSTM_Encoder(nn.Module):
         ent_emb = self.ent_embedding(ent_idxs)
         ent_iob_emb = self.ent_iob_embedding(ent_iob_idxs)
 
-        emb = torch.cat((word_emb, pos_emb, dep_emb, ent_emb, ent_iob_emb), -1)
+        bert_outs = self.bert_encoder(subword_idxs, subword_masks, token_starts_masks)
+        emb = torch.cat((word_emb, pos_emb, dep_emb, ent_emb, ent_iob_emb, bert_outs), -1)
         emb = self.emb_drop(emb)
 
         emb = emb[sorted_idx]

@@ -31,14 +31,17 @@ class UCCA_Evaluator(object):
         self.parser.eval()
         predicted = []
         for batch in loader:
-            word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = batch
+            subword_idxs, subword_masks, token_starts_masks, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages, trees, all_nodes, all_remote = batch
+            subword_idxs = subword_idxs.cuda() if torch.cuda.is_available() else subword_idxs
+            subword_masks = subword_masks.cuda() if torch.cuda.is_available() else subword_masks
+            token_starts_masks = token_starts_masks.cuda() if torch.cuda.is_available() else token_starts_masks
             word_idxs = word_idxs.cuda() if torch.cuda.is_available() else word_idxs
             pos_idxs = pos_idxs.cuda() if torch.cuda.is_available() else pos_idxs
             dep_idxs = dep_idxs.cuda() if torch.cuda.is_available() else dep_idxs
             ent_idxs = ent_idxs.cuda() if torch.cuda.is_available() else ent_idxs
             ent_iob_idxs = ent_iob_idxs.cuda() if torch.cuda.is_available() else ent_iob_idxs
 
-            pred_passages = self.parser.parse(word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
+            pred_passages = self.parser.parse(subword_idxs, subword_masks, token_starts_masks, word_idxs, pos_idxs, dep_idxs, ent_idxs, ent_iob_idxs, passages)
             predicted.extend(pred_passages)
         return predicted
         

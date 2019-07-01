@@ -48,9 +48,12 @@ class Train(object):
 
         # init vocab
         print("collecting words and labels in training dataset...")
-        vocab = Vocab(train)
+        vocab = Vocab(config.ucca.bert_vocab, train)
         print(vocab)
 
+        # filter sentences larger than 512
+        train.filter(512, vocab)
+        
         # prepare pre-trained embedding
         if args.emb_path:
             print("reading pre-trained embedding...")
