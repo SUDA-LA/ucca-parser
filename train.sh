@@ -17,7 +17,7 @@ fr_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_French-20K
 de_test_20k_path=/data/wjiang/UCCA/test-data/test-xml-gold/UCCA_German-20K
 
 
-gpu=0
+gpu=1
 
 if [ ! -d "$save_path" ]; then
     mkdir "$save_path"

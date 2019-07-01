@@ -21,15 +21,15 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
-Pre-trained bert model: This version uses base-multilingual-cased bert from pytorch_pretrained_bert. To run the code, please download parameter and vocab files from https://github.com/huggingface/pytorch-pretrained-BERT.
+Pre-trained bert model: This version uses base-multilingual-cased bert from pytorch_pretrained_bert. To run the code, please download parameter and vocab files from https://github.com/huggingface/pytorch-pretrained-BERT and modify the paths in config.json.
 
 ## Performance
 
-Here are the results on French dataset I re-run on June 28, 2019.
+Here are the results on French dataset I re-run on June 30, 2019.
 
 | description          | dev primary | dev remote | dev average | test 20K    primary | test 20K remote | test 20K average |
 | -------------------- | ----------- | ---------- | ----------- | ------------------- | --------------- | ---------------- |
-| multilingual-lexical-bert |         |        |         |                 |             |              |
+| multilingual-lexical-bert |  80.0       | 48.1       |   79.3      |      77.7           |     40.7        |    76.8          |
 
 
 

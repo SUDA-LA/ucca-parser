@@ -76,10 +76,8 @@ def _clean_text(text):
 def judge_ignore(word):
     if len(_clean_text(word)) == 0:
         return True
-    for char in word:
-        cp = ord(char)
-        if cp == 0 or cp == 0xFFFD or _is_control(char):
-            return True
+    if all(ord(char) == 0 or ord(char) == 0xFFFD or _is_control(char) for char in word):
+        return True
     return False
 
 class Vocab(object):
