@@ -2,7 +2,7 @@
 
 An implementation of "[HLT@SUDA at SemEval 2019 Task 1: UCCA Graph Parsing as Constituent Tree Parsing](https://arxiv.org/abs/1903.04153)".
 
-This version of the implementation uses lexical features in the corpus, including POS tags, dependency labels and entity labels, just as described in the paper.
+This version of the implementation uses lexical features in the corpus and BERT embeddings.
 
 ## Requirements
 
@@ -10,6 +10,7 @@ This version of the implementation uses lexical features in the corpus, includin
 python >= 3.6.0
 pytorch == 1.0.0
 ucca == 1.0.127
+pytorch-pretrained-bert == 0.6.2
 ```
 
 Note that the code has not been tested on the newest version of ucca module.
@@ -20,13 +21,15 @@ The datasets are all provided by SemEval-2019 Task 1: Cross-lingual Semantic Par
 
 Pre-trained embeddings: [http://fasttext.cc](http://fasttext.cc/)
 
+Pre-trained BERT : This version uses cased-multilingual-base BERT from [https://github.com/huggingface/pytorch-pretrained-BERT](https://github.com/huggingface/pytorch-pretrained-BERT). To run the code, please download parameter and vocab files first and change paths in the config.json.
+
 ## Performance
-Here are the results I re-run on June 13, 2019, which are almost the same with the results in the paper.
+Here are the results I re-run on July 1, 2019, which are almost the same with the results in the paper.
 
 | description              | dev primary | dev remote | dev average | test wiki primary | test wiki remote | test wiki average | test 20K    primary | test 20K remote | test 20K average |
 | ------------------------ | ----------- | ---------- | ----------- | ----------------- | ---------------- | ----------------- | ------------------- | --------------- | ---------------- |
-| English-Topdown-Lexical | 79.7        | 52.2       | 79.2        | 77.9              | 48.0             | 77.4              | 74.0                | 23.4            | 73.0             |
-| German-Topdown-Lexical  | 82.9        | 57.1       | 82.4        | /                 | /                | /                 | 83.5                | 61.1            | 83.0             |
+| English-Topdown-Lexical-BERT | 82.7        | 55.6       | 82.2        | 81.2              | 57.9             | 80.8              | 77.6                | 31.0            | 76.6             |
+| German-Topdown-Lexical-BERT  | 84.7        | 60.5       | 84.2        | /                 | /                | /                 | 85.2                | 63.3            | 84.7             |
 
 ## Usage
 
