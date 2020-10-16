@@ -1,5 +1,5 @@
 import copy
-from parser.convert import UCCA2tree
+from ..convert import UCCA2tree
 
 from ucca.layer1 import FoundationalNode
 from ucca.layer0 import Terminal

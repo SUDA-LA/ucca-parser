@@ -1,13 +1,13 @@
 import argparse
 import os
 import datetime
-from parser import UCCA_Parser
+from ucca_parser import UCCA_Parser
 
 import torch
 import torch.utils.data as Data
 from ucca.convert import passage2file
 
-from parser.utils import Corpus, collate_fn
+from ucca_parser.utils import Corpus, collate_fn
 
 
 @torch.no_grad()

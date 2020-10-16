@@ -7,7 +7,7 @@
 *conll
 *-hwc
 *.pt
-./train
+train
 *.xml
-./exp
-./experiment
+exp
+experiment

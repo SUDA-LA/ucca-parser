@@ -1,12 +1,12 @@
 import argparse
 import os
-from parser import UCCA_Parser
+from ucca_parser import UCCA_Parser
 
 import torch
 import torch.utils.data as Data
 from ucca.convert import passage2file
 
-from parser.utils import Corpus, collate_fn, UCCA_Evaluator
+from ucca_parser.utils import Corpus, collate_fn, UCCA_Evaluator
 
 
 class Evaluate(object):

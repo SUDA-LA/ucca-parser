@@ -1,15 +1,14 @@
-import torch
+import os
 
-from .submodel import (
-    Chart_Span_Parser,
-    Remote_Parser,
-    LSTM_Encoder,
-    Attention_Encoder,
-    Topdown_Span_Parser,
-    Global_Chart_Span_Parser,
-)
+import torch
+from ucca.core import Passage
+from ucca.layer0 import Layer0
+
 from .convert import to_UCCA
-from .utils import get_config
+from .submodel import (Attention_Encoder, Chart_Span_Parser,
+                       Global_Chart_Span_Parser, LSTM_Encoder, Remote_Parser,
+                       Topdown_Span_Parser)
+from .utils import get_config, is_punct
 
 
 class UCCA_Parser(torch.nn.Module):
@@ -56,32 +55,32 @@ class UCCA_Parser(torch.nn.Module):
         if args.type == "chart":
             self.span_parser = Chart_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim if args.encoder == 'lstm' else args.d_model,
                 label_hidden_dim=args.label_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False if args.encoder == 'lstm' else True,
             )
         elif args.type == "top-down":
             self.span_parser = Topdown_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim if args.encoder == 'lstm' else args.d_model,
                 label_hidden_dim=args.label_hidden,
                 split_hidden_dim=args.split_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False if args.encoder == 'lstm' else True,
             )
         elif args.type == "global-chart":
             self.span_parser = Global_Chart_Span_Parser(
                 vocab=vocab,
-                lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+                lstm_dim=args.lstm_dim if args.encoder == 'lstm' else args.d_model,
                 label_hidden_dim=args.label_hidden,
                 drop=args.ffn_drop,
-                norm=False if args.encoder=='lstm' else True,
+                norm=False if args.encoder == 'lstm' else True,
             )
 
         self.remote_parser = Remote_Parser(
             vocab=vocab,
-            lstm_dim=args.lstm_dim if args.encoder=='lstm' else args.d_model,
+            lstm_dim=args.lstm_dim if args.encoder == 'lstm' else args.d_model,
             mlp_label_dim=args.mlp_label_dim,
         )
 
@@ -90,20 +89,47 @@ class UCCA_Parser(torch.nn.Module):
 
         if self.training:
             span_loss = self.span_parser.get_loss(spans, sen_lens, trees)
-            remote_loss = self.remote_parser.get_loss(spans, sen_lens, all_nodes, all_remote)
+            remote_loss = self.remote_parser.get_loss(
+                spans, sen_lens, all_nodes, all_remote)
             return span_loss, remote_loss
         else:
             predict_trees = self.span_parser.predict(spans, sen_lens)
-            predict_passages = [to_UCCA(passage, pred_tree) for passage, pred_tree in zip(passages, predict_trees)]
-            predict_passages = self.remote_parser.restore_remote(predict_passages, spans, sen_lens)
+            predict_passages = [to_UCCA(passage, pred_tree) for passage, pred_tree in zip(
+                passages, predict_trees)]
+            predict_passages = self.remote_parser.restore_remote(
+                predict_passages, spans, sen_lens)
             return predict_passages
 
+    def predict(self, words):
+        word_idxs = self.vocab.word2id(
+            [self.vocab.START] + words + [self.vocab.STOP])
+        char_idxs = self.vocab.char2id(
+            [self.vocab.START] + words + [self.vocab.STOP])
+        word_idxs = torch.tensor(word_idxs).unsqueeze(0)
+        char_idxs = torch.tensor(char_idxs).unsqueeze(0)
+        spans, sen_lens = self.shared_encoder(word_idxs, char_idxs)
+        predict_trees = self.span_parser.predict(spans, sen_lens)
+
+        passage = Passage(ID='0')
+        layer0 = Layer0(root=passage)
+        for word in words:
+            layer0.add_terminal(word, punct=True if is_punct(word) else False)
+
+        predict_passage = [to_UCCA(passage, predict_trees[0])]
+        predict_passage = self.remote_parser.restore_remote(
+            predict_passage, spans, sen_lens)
+        return predict_passage[0]
+
     @classmethod
-    def load(cls, vocab_path, config_path, state_path):
+    def load(cls, path):
         if torch.cuda.is_available():
             device = torch.device('cuda')
         else:
             device = torch.device('cpu')
+        vocab_path = os.path.join(path, "vocab.pt")
+        state_path = os.path.join(path, "parser.pt")
+        config_path = os.path.join(path, "config.json")
+
         state = torch.load(state_path, map_location=device)
         vocab = torch.load(vocab_path)
         config = get_config(config_path)

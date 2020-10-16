@@ -1,19 +1,17 @@
-from parser.module import Feedforward
-
 import torch
 import torch.nn as nn
 from ucca.layer0 import Terminal
 
-from parser.convert import to_UCCA
-from parser.convert import InternalParseNode, LeafParseNode
-from parser.convert import get_position
+from ..convert import InternalParseNode, LeafParseNode, get_position, to_UCCA
+from ..module import Feedforward
 
 
 class Chart_Span_Parser(nn.Module):
     def __init__(self, vocab, lstm_dim, label_hidden_dim, drop=0, norm=False):
         super(Chart_Span_Parser, self).__init__()
         self.vocab = vocab
-        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
+        self.label_ffn = Feedforward(
+            lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
 
     def forward(self, span):
         label_score = self.label_ffn(span)
@@ -25,7 +23,8 @@ class Chart_Span_Parser(nn.Module):
         if length == 1:
             tree = LeafParseNode(int(left), "pos", "word")
             if label_index != self.vocab.NULL_index:
-                tree = InternalParseNode(self.vocab.id2parse_label(label_index), [tree])
+                tree = InternalParseNode(
+                    self.vocab.id2parse_label(label_index), [tree])
             return [tree]
         else:
             best_split = best_split_matrix[length - 1][left]
@@ -36,7 +35,8 @@ class Chart_Span_Parser(nn.Module):
             )
             if label_index != self.vocab.NULL_index:
                 tree = [
-                    InternalParseNode(self.vocab.id2parse_label(label_index), children)
+                    InternalParseNode(
+                        self.vocab.id2parse_label(label_index), children)
                 ]
             else:
                 tree = children
@@ -60,7 +60,8 @@ class Chart_Span_Parser(nn.Module):
                 if length == sen_len:
                     label_score[0] = float("-inf")
 
-                argmax_label_score, argmax_label_index = torch.max(label_score, dim=0)
+                argmax_label_score, argmax_label_index = torch.max(
+                    label_score, dim=0)
                 label_index_matrix[length - 1, left] = argmax_label_index
 
                 if length == 1:
@@ -80,7 +81,8 @@ class Chart_Span_Parser(nn.Module):
                     accum_score_matrix[length - 1][left] = (
                         accum_score + argmax_label_score
                     )
-        tree = self.trace_back(0, sen_len, best_split_matrix, label_index_matrix)
+        tree = self.trace_back(
+            0, sen_len, best_split_matrix, label_index_matrix)
         assert len(tree) == 1
         return tree[0].convert()
 
@@ -126,7 +128,8 @@ class Topdown_Span_Parser(nn.Module):
     ):
         super(Topdown_Span_Parser, self).__init__()
         self.vocab = vocab
-        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
+        self.label_ffn = Feedforward(
+            lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
         self.split_ffn = Feedforward(lstm_dim, split_hidden_dim, 1, drop, norm)
 
     def forward(self, span):
@@ -201,7 +204,8 @@ class Topdown_Span_Parser(nn.Module):
         for i, length in enumerate(sen_lens):
             span_num = (1 + length) * length // 2
             label_score, split_score = self.forward(spans[i][:span_num])
-            _, loss = self.helper(label_score, split_score, length, 0, length, trees[i])
+            _, loss = self.helper(label_score, split_score,
+                                  length, 0, length, trees[i])
             batch_loss.append(loss)
         return batch_loss
 
@@ -210,7 +214,8 @@ class Topdown_Span_Parser(nn.Module):
         for i, length in enumerate(sen_lens):
             span_num = (1 + length) * length // 2
             label_score, split_score = self.forward(spans[i][:span_num])
-            pred_tree, _ = self.helper(label_score, split_score, length, 0, length)
+            pred_tree, _ = self.helper(
+                label_score, split_score, length, 0, length)
             pred_trees.append(pred_tree[0].convert())
         return pred_trees
 
@@ -224,7 +229,8 @@ class Global_Chart_Span_Parser(nn.Module):
     def __init__(self, vocab, lstm_dim, label_hidden_dim, drop=0, norm=False):
         super(Global_Chart_Span_Parser, self).__init__()
         self.vocab = vocab
-        self.label_ffn = Feedforward(lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
+        self.label_ffn = Feedforward(
+            lstm_dim, label_hidden_dim, vocab.num_parse_label, drop, norm)
 
     def forward(self, span):
         label_score = self.label_ffn(span)
@@ -236,7 +242,8 @@ class Global_Chart_Span_Parser(nn.Module):
         if length == 1:
             tree = LeafParseNode(int(left), "pos", "word")
             if label_index != self.vocab.NULL_index:
-                tree = InternalParseNode(self.vocab.id2parse_label(label_index), [tree])
+                tree = InternalParseNode(
+                    self.vocab.id2parse_label(label_index), [tree])
             return [tree]
         else:
             best_split = best_split_matrix[length - 1][left]
@@ -247,7 +254,8 @@ class Global_Chart_Span_Parser(nn.Module):
             )
             if label_index != self.vocab.NULL_index:
                 tree = [
-                    InternalParseNode(self.vocab.id2parse_label(label_index), children)
+                    InternalParseNode(
+                        self.vocab.id2parse_label(label_index), children)
                 ]
             else:
                 tree = children
@@ -269,13 +277,15 @@ class Global_Chart_Span_Parser(nn.Module):
 
                 if self.training:
                     oracle_label = gold.oracle_label(left, right)
-                    oracle_label_index = self.vocab.parse_label2id(oracle_label)
+                    oracle_label_index = self.vocab.parse_label2id(
+                        oracle_label)
                     label_score = self.augment(label_score, oracle_label_index)
 
                 if length == sen_len:
                     label_score[0] = float("-inf")
 
-                argmax_label_score, argmax_label_index = torch.max(label_score, dim=0)
+                argmax_label_score, argmax_label_index = torch.max(
+                    label_score, dim=0)
                 label_index_matrix[length - 1, left] = argmax_label_index
 
                 if length == 1:
@@ -291,11 +301,13 @@ class Global_Chart_Span_Parser(nn.Module):
                 accum_score, best_split = torch.max(span_scores, dim=0)
                 best_split_matrix[length - 1][left] = best_split + left + 1
 
-                accum_score_matrix[length - 1][left] = accum_score + argmax_label_score
+                accum_score_matrix[length -
+                                   1][left] = accum_score + argmax_label_score
         if self.training:
             return None, accum_score_matrix[-1][0]
 
-        tree = self.trace_back(0, sen_len, best_split_matrix, label_index_matrix)
+        tree = self.trace_back(
+            0, sen_len, best_split_matrix, label_index_matrix)
         assert len(tree) == 1
         return tree[0].convert(), accum_score_matrix[-1][0]
 
@@ -319,7 +331,8 @@ class Global_Chart_Span_Parser(nn.Module):
                 oracle_split = min(oracle_splits)
 
                 left_score = accum_score_matrix[oracle_split - left - 1, left]
-                right_score = accum_score_matrix[right - oracle_split - 1, oracle_split]
+                right_score = accum_score_matrix[right -
+                                                 oracle_split - 1, oracle_split]
 
                 accum_score_matrix[length - 1][left] = (
                     left_score + right_score + oracle_label_score

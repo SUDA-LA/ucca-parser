@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-
-from parser.module import MLP, Biaffine
-from parser.convert import get_position
 from ucca.layer0 import Terminal
+
+from ..convert import get_position
+from ..module import MLP, Biaffine
 
 
 class Remote_Parser(nn.Module):
@@ -21,11 +21,13 @@ class Remote_Parser(nn.Module):
         label_head_mlp_out = self.label_head_mlp(span_vectors)
         label_dep_mlp_out = self.label_dep_mlp(span_vectors)
 
-        label_scores = self.label_biaffine(label_head_mlp_out, label_dep_mlp_out)
+        label_scores = self.label_biaffine(
+            label_head_mlp_out, label_dep_mlp_out)
         return label_scores
 
     def score(self, span_vectors, sen_len, all_span):
-        span_vectors = [span_vectors[get_position(sen_len, i, j)] for i, j in all_span]
+        span_vectors = [span_vectors[get_position(
+            sen_len, i, j)] for i, j in all_span]
         span_vectors = torch.stack(span_vectors)
         label_scores = self.forward(span_vectors.unsqueeze(0))
         return label_scores.squeeze(0).permute(1, 2, 0)
@@ -38,7 +40,8 @@ class Remote_Parser(nn.Module):
                 batch_loss.append(0)
                 continue
             span_num = (1 + length) * length // 2
-            label_scores = self.score(spans[i][:span_num], length, all_nodes[i])
+            label_scores = self.score(
+                spans[i][:span_num], length, all_nodes[i])
             head, dep, label = all_remote[i]
             batch_loss.append(
                 loss_func(
@@ -84,5 +87,6 @@ class Remote_Parser(nn.Module):
                 for i, score in enumerate(label_score):
                     label = self.vocab.id2edge_label(score)
                     if label is not self.vocab.NULL and not nodes[i]._tag == "PNCT":
-                        passage.layer("1").add_remote(nodes[i], label, nodes[head])
+                        passage.layer("1").add_remote(
+                            nodes[i], label, nodes[head])
         return passages

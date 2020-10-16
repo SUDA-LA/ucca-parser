@@ -1,12 +1,12 @@
 import argparse
 import json
 import os
-from parser import UCCA_Parser
+from ucca_parser import UCCA_Parser
 import torch.optim as optim
 import torch
 import torch.utils.data as Data
 
-from parser.utils import (
+from ucca_parser.utils import (
     Corpus,
     Trainer,
     Vocab,
@@ -109,10 +109,8 @@ class Train(object):
         del ucca_parser
         torch.cuda.empty_cache()
         print("reloading the best parser for testing...")
-        vocab_path = os.path.join(args.save_path, "vocab.pt")
-        state_path = os.path.join(args.save_path, "parser.pt")
-        config_path = os.path.join(args.save_path, "config.json")
-        ucca_parser = UCCA_Parser.load(vocab_path, config_path, state_path)
+        vocab_path = os.path.join(args.save_path, "vocab.pt") 
+        ucca_parser = UCCA_Parser.load(args.save_path)
 
         if args.test_wiki_path:
             print("evaluating test data : %s" % (args.test_wiki_path))

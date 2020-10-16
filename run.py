@@ -1,6 +1,6 @@
 import argparse
 import os
-from parser.cmds import Train, Predict, Evaluate
+from ucca_parser.cmds import Train, Predict, Evaluate
 
 import torch
 

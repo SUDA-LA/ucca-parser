@@ -190,5 +190,5 @@ def load_trees(path, strip_top=True):
 def get_position(seq_len, left, right):
     left = torch.tensor(left, dtype=torch.long)
     right = torch.tensor(right, dtype=torch.long)
-    pos = seq_len*left - left*(left+1)/2 + right - 1
+    pos = seq_len*left - left*(left+1)//2 + right - 1
     return pos

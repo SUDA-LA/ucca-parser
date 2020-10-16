@@ -1,14 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from torch.nn.utils.rnn import (
-    pack_padded_sequence,
-    pack_sequence,
-    pad_sequence,
-    pad_packed_sequence,
-)
+from torch.nn.utils.rnn import (pack_padded_sequence, pack_sequence,
+                                pad_packed_sequence, pad_sequence)
 
-from parser.module import CharLSTM, EncoderLayer, PositionEncoding
+from ..module import CharLSTM, EncoderLayer, PositionEncoding
 
 
 class LSTM_Encoder(nn.Module):
@@ -28,9 +24,11 @@ class LSTM_Encoder(nn.Module):
         super(LSTM_Encoder, self).__init__()
         self.vocab = vocab
         self.ext_word_embedding = nn.Embedding.from_pretrained(ext_emb)
-        self.word_embedding = nn.Embedding(vocab.num_train_word, word_dim, padding_idx=0)
+        self.word_embedding = nn.Embedding(
+            vocab.num_train_word, word_dim, padding_idx=0)
 
-        self.charlstm = CharLSTM(vocab.num_char, char_dim, charlstm_dim, char_drop)
+        self.charlstm = CharLSTM(
+            vocab.num_char, char_dim, charlstm_dim, char_drop)
 
         self.lstm = nn.LSTM(
             input_size=word_dim + charlstm_dim,
@@ -58,7 +56,7 @@ class LSTM_Encoder(nn.Module):
 
         word_emb = self.ext_word_embedding(word_idxs)
         word_emb += self.word_embedding(word_idxs.masked_fill_(word_idxs.ge(self.word_embedding.num_embeddings),
-                               self.vocab.UNK_index))
+                                                               self.vocab.UNK_index))
         char_vec = self.charlstm(char_idxs[mask])
         char_vec = pad_sequence(torch.split(char_vec, sen_lens.tolist()), True)
 
@@ -77,7 +75,8 @@ class LSTM_Encoder(nn.Module):
         x_forward, x_backward = x.chunk(2, dim=-1)
 
         mask = (mask & word_idxs.ne(self.vocab.STOP_index))[:, :-1]
-        mask = mask.unsqueeze(1) & mask.new_ones(max_len - 1, max_len - 1).triu(1)
+        mask = mask.unsqueeze(1) & mask.new_ones(
+            max_len - 1, max_len - 1).triu(1)
         lens = mask.sum((1, 2))
         x_forward = x_forward[:-1, :-1].permute(2, 1, 0, 3)
         x_backward = x_backward[1:, 1:].permute(2, 0, 1, 3)
@@ -113,15 +112,18 @@ class Attention_Encoder(nn.Module):
         super(Attention_Encoder, self).__init__()
         self.vocab = vocab
         self.ext_word_embedding = nn.Embedding.from_pretrained(ext_emb)
-        self.word_embedding = nn.Embedding(vocab.num_train_word, word_dim, padding_idx=0)
-        self.charlstm = CharLSTM(vocab.num_char, char_dim, charlstm_dim, char_drop)
+        self.word_embedding = nn.Embedding(
+            vocab.num_train_word, word_dim, padding_idx=0)
+        self.charlstm = CharLSTM(
+            vocab.num_char, char_dim, charlstm_dim, char_drop)
         self.position_encoding = PositionEncoding(
             position_dim, max_seq_len, padding_idx=0, freeze=False
         )
         # self.project = nn.Linear(word_dim, d_model)
         self.layer_stack = nn.ModuleList(
             [
-                EncoderLayer(d_model, d_inner, n_head, d_k, d_v, attention_drop=attention_drop, residual_drop=residual_drop, partition=partition)
+                EncoderLayer(d_model, d_inner, n_head, d_k, d_v, attention_drop=attention_drop,
+                             residual_drop=residual_drop, partition=partition)
                 for _ in range(n_layers)
             ]
         )
@@ -152,10 +154,10 @@ class Attention_Encoder(nn.Module):
 
         word_emb = self.ext_word_embedding(word_idxs)
         word_emb += self.word_embedding(word_idxs.masked_fill_(word_idxs.ge(self.word_embedding.num_embeddings),
-                               self.vocab.UNK_index))
+                                                               self.vocab.UNK_index))
         word_vec = self.emb_drop(word_emb)
         content = word_vec + char_vec
-        
+
         position = self.position_encoding(pos_idxs)
         enc_output = torch.cat((content, position), dim=-1)
         enc_output = self.layer_norm(enc_output)
@@ -167,10 +169,11 @@ class Attention_Encoder(nn.Module):
         x = enc_output.transpose(0, 1)
         x = x.unsqueeze(1) - x
         # x_forward, x_backward = x.chunk(2, dim=-1)
-        x_forward, x_backward = x[:,:,:,0::2], x[:,:,:,1::2]
+        x_forward, x_backward = x[:, :, :, 0::2], x[:, :, :, 1::2]
 
         mask = (mask & word_idxs.ne(self.vocab.STOP_index))[:, :-1]
-        mask = mask.unsqueeze(1) & mask.new_ones(max_len - 1, max_len - 1).triu(1)
+        mask = mask.unsqueeze(1) & mask.new_ones(
+            max_len - 1, max_len - 1).triu(1)
         lens = mask.sum((1, 2))
         x_forward = x_forward[:-1, :-1].permute(2, 1, 0, 3)
         x_backward = x_backward[1:, 1:].permute(2, 0, 1, 3)
@@ -178,4 +181,3 @@ class Attention_Encoder(nn.Module):
         x_span = pad_sequence(torch.split(x_span, lens.tolist()), True)
 
         return x_span, (sen_lens - 2).tolist()
-

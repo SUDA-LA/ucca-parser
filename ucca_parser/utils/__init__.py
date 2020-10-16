@@ -2,7 +2,7 @@ from .corpus import Corpus, Embedding
 from .trainer import Trainer
 from .vocab import Vocab
 from .dataset import TensorDataSet, collate_fn
-from .common import get_config
+from .common import get_config, is_punct
 from .optimizer import Transformer_ScheduledOptim, ScheduledOptim, MyScheduledOptim
 from .evaluator import UCCA_Evaluator
 
@@ -18,4 +18,5 @@ __all__ = (
     "ScheduledOptim",
     "MyScheduledOptim",
     "UCCA_Evaluator",
+    "is_punct"
 )
